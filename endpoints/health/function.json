@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "type": "http",
+  "bindings": [
+    {
+      "function": "exec",
+      "method": "get",
+      "route": "/health",
+      "preprocess": false,
+      "auth": false,
+      "validate": false
+    }
+  ]
+}

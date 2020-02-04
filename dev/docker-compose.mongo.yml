@@ -1,0 +1,43 @@
+version: '3.7'
+services:
+
+  mongo:
+    image: mongo:3
+    container_name: mongo
+    restart: always
+    volumes:
+      - ./mongo/data:/data/db
+      - ./graylog/graylog.js:/docker-entrypoint-initdb.d/graylog.js:ro
+    ports:
+      - 27017:27017
+    networks:
+      - mongo
+      - monitoring
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      start_period: 10s
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    networks:
+      - mongo
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_OPTIONS_EDITORTHEME: ambiance
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "localhost", "8081"]
+      start_period: 5s
+
+networks:
+  mongo:
+    driver: bridge

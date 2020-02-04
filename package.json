@@ -1,0 +1,62 @@
+{
+  "name": "jwt-up",
+  "version": "1.0.0",
+  "description": "jwt server",
+  "author": "Alex Furmanov",
+  "license": "MIT",
+  "main": "index.js",
+  "homepage": "https://bitbucket.org/hragency_back/hragency_back_repo/wiki/Home",
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/hragency_back/hragency_back_repo.git"
+  },
+  "bugs": {
+    "url": "https://bitbucket.org/hragency_back/hragency_back_repo/issues"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "mocha 'test/**/*.test.js' --bail",
+    "test:v": "DEBUG_LEVEL=verbose mocha 'test/**/*.test.js' --bail",
+    "test:l": "mocha 'test/**/*.test.js' --grep",
+    "test:l:v": "DEBUG_LEVEL=verbose mocha 'test/**/*.test.js' --grep",
+    "deploy": "git checkout master && git pull origin master && npm run test && git push origin master && git checkout staging && git merge master && git push origin staging && git checkout master"
+  },
+  "dependencies": {
+    "@hapi/joi": "^16.1.8",
+    "ajv": "^5.5.2",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.4",
+    "express": "^4.17.1",
+    "express-statsd": "^0.3.0",
+    "fs": "latest",
+    "hashids": "^2.1.0",
+    "http": "latest",
+    "http-graceful-shutdown": "^2.3.2",
+    "iconv-lite": "^0.5.0",
+    "is-url": "^1.2.4",
+    "joi": "^14.3.1",
+    "joi-route-to-swagger": "^0.8.1",
+    "joi-to-swagger": "^3.3.0",
+    "jsonfile": "^5.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "lynx": "^0.2.0",
+    "mime": "^2.4.4",
+    "moment": "^2.24.0",
+    "mongodb": "^3.3.5",
+    "nconf": "^0.10.0",
+    "nodejs": "latest",
+    "nodemailer": "^6.3.1",
+    "path": "latest",
+    "request": "latest",
+    "swagger-ui-express": "^4.1.2",
+    "url": "latest",
+    "uuid": "latest",
+    "winston": "^3.2.1",
+    "winston-graylog2": "^2.1.2"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.2.2",
+    "rewire": "^4.0.1"
+  }
+}

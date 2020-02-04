@@ -1,0 +1,55 @@
+version: '3.7'
+services:
+
+  influxdb:
+    image: influxdb:alpine
+    container_name: influxdb
+    restart: always
+    ports:
+      - 8086:8086
+    networks:
+      - monitoring
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb
+
+    # environment: 
+    #   INFLUXDB_DB: telegraf
+    #   INFLUXDB_ADMIN_ENABLED: true
+    #   INFLUXDB_ADMIN_USER: admin
+    #   INFLUXDB_ADMIN_PASSWORD: supersecretpassword
+    #   INFLUXDB_USER: telegraf
+    #   INFLUXDB_USER_PASSWORD: secretpassword
+
+  telegraf:
+    image: telegraf:alpine
+    container_name: telegraf
+    restart: always
+    depends_on:
+      - influxdb
+    ports:
+      - "8125:8125/udp"
+    networks:
+      - monitoring
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - ./wait-for-it.sh:/wait-for-it.sh:ro
+    command: ["/wait-for-it.sh", "influxdb:8086", "--", "telegraf"]
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    depends_on:
+      - telegraf
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "localhost", "3000"]
+      start_period: 5s
+    environment: 
+      GF_SECURITY_ADMIN_PASSWORD: fortress
+
+networks:
+  monitoring:
+    driver: bridge

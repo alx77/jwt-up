@@ -1,0 +1,59 @@
+{
+  "enabled": true,
+  "type": "http",
+  "description": "Service to make JWT more convenient in use",
+  "bindings": [
+    {
+      "function": "create",
+      "summary": "Add new user",
+      "description": "Please use JWT to add new user",
+      "method": "post",
+      "route": "/user",
+      "preprocess": true,
+      "auth": true,
+      "validate": true
+    },
+    {
+      "function": "read",
+      "summary": "Get user by id",
+      "method": "get",
+      "route": "/user/:uid",
+      "preprocess": true,
+      "auth": true,
+      "validate": true
+    },
+    {
+      "function": "readByEmail",
+      "summary": "Get user by email",
+      "method": "get",
+      "route": "/user/:email",
+      "preprocess": true,
+      "auth": true,
+      "validate": true
+    },
+    {
+      "function": "update",
+      "method": "patch",
+      "route": "/user",
+      "preprocess": true,
+      "auth": true,
+      "validate": true
+    },
+    {
+      "function": "del",
+      "method": "delete",
+      "route": "/user/:uid",
+      "preprocess": true,
+      "auth": true,
+      "validate": true
+    },
+    {
+      "function": "list",
+      "method": "get",
+      "route": "/users",
+      "preprocess": true,
+      "auth": true,
+      "validate": true
+    }
+  ]
+}

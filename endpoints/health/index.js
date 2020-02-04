@@ -1,0 +1,1 @@
+module.exports.exec = async (req, res) => res.status(200).json({ status: 'UP' }).end();
