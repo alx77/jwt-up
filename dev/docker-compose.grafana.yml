@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.3'
 services:
 
   influxdb:
@@ -46,9 +46,9 @@ services:
       - monitoring
     healthcheck:
       test: ["CMD", "nc", "-vz", "localhost", "3000"]
-      start_period: 5s
+      #start_period: 5s
     environment: 
-      GF_SECURITY_ADMIN_PASSWORD: fortress
+      GF_SECURITY_ADMIN_PASSWORD: secret
 
 networks:
   monitoring:

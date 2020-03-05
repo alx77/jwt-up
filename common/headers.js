@@ -1,5 +1,6 @@
 const cfg = require("./config");
 
+//prettier-ignore
 module.exports.setHeaders = function (req, res) {
     let cors = cfg.get("cors");
     if (cors.enabled) {

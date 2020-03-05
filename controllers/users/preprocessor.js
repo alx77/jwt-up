@@ -2,8 +2,7 @@ const headers = {
     authorization: "jwt-decode"
 };
 module.exports = {
-    create: {
-        headers,
+    activate: {
         body: {
             uid: "hash-decode"
         }

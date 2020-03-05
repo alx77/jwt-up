@@ -12,11 +12,11 @@ while :; do
     sleep 3
 done
 
-grafana_creds="admin:fortress"
+grafana_creds="admin:secret"
 DSID=$(curl -X POST --silent -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Basic $(echo -n $grafana_creds | base64)" \
-    -d "{\"name\":\"InfluxDB\",\"type\":\"influxdb\",\"typeLogoUrl\":\"public/app/plugins/datasource/influxdb/img/influxdb_logo.svg\",\"access\":\"direct\",\"url\":\"http://localhost:8086\",\"password\":\"fortress\",\"user\":\"telegraf\",\"database\":\"telegraf\",\"basicAuth\":false,\"isDefault\":true,\"jsonData\":{\"httpMode\":\"GET\"}}" \
+    -d "{\"name\":\"InfluxDB\",\"type\":\"influxdb\",\"typeLogoUrl\":\"public/app/plugins/datasource/influxdb/img/influxdb_logo.svg\",\"access\":\"direct\",\"url\":\"http://localhost:8086\",\"password\":\"secret\",\"user\":\"telegraf\",\"database\":\"telegraf\",\"basicAuth\":false,\"isDefault\":true,\"jsonData\":{\"httpMode\":\"GET\"}}" \
     http://localhost:3000/api/datasources | jq -rc ."datasource"."id")
 
 curl -X POST --silent -H "Accept: application/json" \

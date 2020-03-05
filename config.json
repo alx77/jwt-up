@@ -1,23 +1,28 @@
 {
-    "port": 8088,
-    "cors": {
-        "enabled": true,
-        "allowAny": true,
-        "origin": "http://localhost:63342"
-    },
-    "loglevel": {
-        "file": "error",
-        "console": "debug",
-        "graylog": "debug"
-    },
-    "NODE_ENV": "development",
-    "SERVER_KEY": "mysupersecret",
-    "HASHIDS_SALT": "mysupersalt",
-    "MONGO_URL": "mongodb://root:example@localhost:27017",
-    "MONGO_DB_NAME": "sso",
-    "MONGO_POOL_SIZE": "5",
-    "STATSD_HOST": "localhost",
-    "STATSD_PORT": 8125,
-    "GRAYLOG_HOST": "localhost",
-    "GRAYLOG_PORT": 12201
+  "CLIENT_ID": "jwt-up",
+  "port": 8088,
+  "cors": {
+    "enabled": true,
+    "allowAny": true,
+    "origin": "http://localhost:63342"
+  },
+  "loglevel": {
+    "file": "error",
+    "console": "debug",
+    "graylog": "debug"
+  },
+  "NODE_ENV": "development",
+  "SERVER_KEY": "mysupersecret",
+  "HASHIDS_SALT": "mysupersalt",
+  "MONGO_URL": "mongodb://root:example@localhost:27017",
+  "MONGO_DB_NAME": "sso",
+  "MONGO_POOL_SIZE": "5",
+  "REDIS_HOST": "localhost",
+  "REDIS_PORT": 6379,
+  "POSTGRES_CONN": "postgres://postgres:secret@localhost:5432/ugolok",
+  "KAFKA_HOST": "localhost:9092",
+  "KAFKA_ACTIVATION_TOPIC":"jwt-up.activation",
+  "GRAYLOG_HOST": "localhost",
+  "GRAYLOG_PORT": 12201,
+  "USER_ACTIVATION_DELAY":3600
 }

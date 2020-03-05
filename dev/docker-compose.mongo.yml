@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.3'
 services:
 
   mongo:
@@ -18,7 +18,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: example
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
-      start_period: 10s
+      interval: 1s
 
   mongo-express:
     image: mongo-express
@@ -36,7 +36,7 @@ services:
       ME_CONFIG_OPTIONS_EDITORTHEME: ambiance
     healthcheck:
       test: ["CMD", "nc", "-vz", "localhost", "8081"]
-      start_period: 5s
+      interval: 1s
 
 networks:
   mongo:

@@ -6,12 +6,20 @@
     {
       "function": "create",
       "summary": "Add new user",
-      "description": "Please use JWT to add new user",
+      "description": "This method creates temporal users until they activate it by email",
       "method": "post",
       "route": "/user",
-      "preprocess": true,
-      "auth": true,
+      "preprocess": false,
+      "auth": false,
       "validate": true
+    },
+    {
+      "function": "activate",
+      "method": "get",
+      "route": "/activate",
+      "preprocess": true,
+      "auth": false,
+      "validate": false
     },
     {
       "function": "read",

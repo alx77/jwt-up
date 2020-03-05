@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.3'
 services:
 
   elasticsearch:
@@ -53,7 +53,7 @@ services:
       - mongo
     healthcheck:
       test: curl --fail http://localhost:9000 || exit 1
-      start_period: 5s
+      #start_period: 5s
 
 networks:
   graylog:

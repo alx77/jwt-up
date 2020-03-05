@@ -1,17 +1,30 @@
 const log = require("../../common/logger");
-const metrics = require("../../common/metrics");
-const MongoHelper = require("../../common/MongoHelper");
-const { encodeId, decodeId } = require("../../common/hashids");
-
-const USERS_COLLECTION = "users";
+//const metrics = require("../../common/metrics");
+const userService = require("../../services/users");
 
 async function create(req, res, next) {
   try {
-    const mongo = await MongoHelper.getConnection();
-    const result = await mongo.insertOne(USERS_COLLECTION, { ...req.body, ...req.preprocessed.body });
-    metrics.increment("users.created");
-    log.info(`user: ${req.body.email} inserted with id: ${result.insertedId}`);
+    const result = await userService.createUser(req.body)
+//    metrics.increment("users.created");
     res.json({ status: "OK", insertedId: result.insertedId }).end();
+  }
+  catch (e) {
+    next(e);
+  }
+}
+
+async function activate(req, res, next) {
+  const {
+    uid
+  } = req.preprocessed.params;
+  try {
+//    const result = await userService.createUser({ ...req.body, ...req.preprocessed.body })
+    const mongo = await MongoHelper.getConnection();
+    const result = await mongo.findOne(USERS_COLLECTION, { uid });
+    if (!result) throw new Error("Could not find entry");
+    log.info(`user: ${result.email} found`);
+    result.uid = encodeId(result.uid);
+    res.json({ status: "OK", result }).end();
   }
   catch (e) {
     next(e);
@@ -97,5 +110,5 @@ async function list(req, res, next) {
 }
 
 module.exports = {
-  create, read, readByEmail, update, del, list
+  create, activate, read, readByEmail, update, del, list
 }
