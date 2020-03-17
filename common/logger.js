@@ -1,6 +1,5 @@
 const cfg = require("./config");
 const winston = require("winston");
-const WinstonGraylog2 = require("winston-graylog2");
 const { combine, errors, timestamp, colorize } = winston.format;
 const colorizer = colorize();
 const loglevel = cfg.get("loglevel");
@@ -23,21 +22,6 @@ const transports = [
     )
   })
 ];
-
-cfg.get("GRAYLOG_HOST") &&
-  transports.push(
-    new WinstonGraylog2({
-      name: "JWT-UP",
-      level: loglevel.graylog || "info",
-      graylog: {
-        servers: [
-          { host: cfg.get("GRAYLOG_HOST"), port: cfg.get("GRAYLOG_PORT") }
-        ],
-        facility: "jwt-up"
-      },
-      staticMeta: { env: cfg.get("NODE_ENV") }
-    })
-  );
 
 const logger = winston.createLogger({ transports });
 

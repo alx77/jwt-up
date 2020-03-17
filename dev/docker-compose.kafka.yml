@@ -1,5 +1,16 @@
 version: '3.3'
 services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    networks:
+      - kafka
+    healthcheck:
+      test: ["CMD", "echo ruok | nc -w 2 -q 2 localhost 2181 | grep imok"]
+#      test: ["CMD", "nc", "-vz", "localhost", "2181"]
+      interval: 1s
   kafka:
     image: wurstmeister/kafka
     container_name: kafka
@@ -9,15 +20,18 @@ services:
       - 9092:9092
     environment: 
       KAFKA_ADVERTISED_HOST_NAME: localhost
-      KAFKA_ZOOKEPER_CONNECT: zookeeper:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "com.ugolok.notifications:1:1"
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - kafka
     healthcheck:
-      test: ["CMD", "nc", "-vz", "localhost", "9092"]
+      test: ["CMD", "zookeeper-shell.sh zookeeper:2181 <<< \"ls /brokers/ids\" | tail -1 | jq '.[]' | grep 1001"]
+#      test: ["CMD", "echo ruok | nc -w 2 -q 2 zookeeper 2181 | grep imok"]
+#      test: ["CMD", "nc", "-vz", "localhost", "9092"]
       interval: 1s
-  zookeeper:
-    image: wurstmeister/zookeeper
-    container_name: zookeeper
-    ports:
-      - 2181:2181
-    healthcheck:
-      test: "echo stat | nc localhost 2181"
-      interval: 1s
+
+networks:
+  kafka:
+    driver: bridge

@@ -1,7 +1,7 @@
 const pg = require("../utils/PostresHelper");
+const redis = require("../utils/RedisHelper");
 const path = require("path");
 const fs = require("fs");
-const redis = require("../utils/RedisHelper");
 
 class StorageInitializer {
   async runScript(fileName) {

@@ -4,9 +4,9 @@ const userService = require("../../services/users");
 
 async function create(req, res, next) {
   try {
-    const result = await userService.createUser(req.body)
+    await userService.createUser(req.body)
 //    metrics.increment("users.created");
-    res.json({ status: "OK", insertedId: result.insertedId }).end();
+    res.json({ status: "OK" }).end();
   }
   catch (e) {
     next(e);

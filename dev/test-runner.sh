@@ -9,6 +9,7 @@ if [[ $1 == 'start' ]]; then
         echo "waiting for healthy instances...$DOCKER_RUNNING_INSTANCES"
         sleep 3
     done
+    sleep 5 #for kafka elections
 else
-    docker-compose -f dev/docker-compose.postgres.yml -f dev/docker-compose.redis.yml down
+    docker-compose -f dev/docker-compose.postgres.yml -f dev/docker-compose.redis.yml -f dev/docker-compose.kafka.yml down
 fi

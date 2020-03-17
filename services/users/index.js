@@ -4,22 +4,30 @@ const cfg = require("../../common/config");
 const redis = require("../../utils/RedisHelper");
 const nanoid = require("nanoid");
 const bcrypt = require("bcrypt");
-const { producer } = require("../../utils/KafkaHelper");
+const { producer, CompressionTypes } = require("../../utils/KafkaHelper");
 
 class UserService {
   async createUser(user) {
     const activationCode = nanoid(10);
     user.password = bcrypt.hashSync(user.password, 10);
     const userStr = JSON.stringify(user);
-    // const userWithCodeStr = JSON.stringify({ ...user, activationCode });
-    await redis.setex(activationCode, cfg.get("USER_ACTIVATION_DELAY"), userStr);
+    const userWithCodeStr = JSON.stringify({
+      ...user,
+      payload: { ...user.payload, activationCode }
+    });
+    await redis.setex(
+      activationCode,
+      cfg.get("USER_ACTIVATION_DELAY"),
+      userStr
+    );
     await producer.connect();
     await producer.send({
       topic: cfg.get("KAFKA_ACTIVATION_TOPIC"),
-      messages: [
-        { value: { ...user, payload: { ...user.payload, activationCode } } }
-      ]
+      messages: [{ key: activationCode, value: userWithCodeStr }],
+      timeout: 15000,
+      compression: CompressionTypes.Snappy
     });
+    await producer.disconnect();
   }
 
   async activate(activationCode) {

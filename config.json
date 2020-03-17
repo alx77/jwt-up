@@ -8,8 +8,7 @@
   },
   "loglevel": {
     "file": "error",
-    "console": "debug",
-    "graylog": "debug"
+    "console": "debug"
   },
   "NODE_ENV": "development",
   "SERVER_KEY": "mysupersecret",
@@ -21,8 +20,7 @@
   "REDIS_PORT": 6379,
   "POSTGRES_CONN": "postgres://postgres:secret@localhost:5432/ugolok",
   "KAFKA_HOST": "localhost:9092",
-  "KAFKA_ACTIVATION_TOPIC":"jwt-up.activation",
-  "GRAYLOG_HOST": "localhost",
-  "GRAYLOG_PORT": 12201,
+  "KAFKA_ACTIVATION_TOPIC":"com.ugolok.notifications",
+  "KAFKA_CONSUMER_GROUP":"notifications-group",
   "USER_ACTIVATION_DELAY":3600
 }

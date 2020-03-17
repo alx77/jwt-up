@@ -2,7 +2,7 @@ const { createServer } = require("http");
 const express = require("express");
 const bodyParser = require("body-parser");
 const swaggerUi = require("swagger-ui-express");
-const prometheusExpress = require("express-prom-bundle");
+//const prometheusExpress = require("express-prom-bundle");
 
 const gracefulShutdown = require("http-graceful-shutdown");
 const { setHeaders } = require("./common/headers");
@@ -15,8 +15,12 @@ const app = express();
 const router = express.Router();
 const server = createServer(app);
 
+const kafka = require("./utils/KafkaHelper");
+const pg = require("./utils/PostresHelper");
+const redis = require("./utils/RedisHelper");
+
 //app.disable("etag");
-app.use(prometheusExpress({ includeMethod: true }));
+//app.use(prometheusExpress({ includeMethod: true }));
 app.use(express.static(__dirname + "/web"));
 app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // to support URL-encoded bodies
@@ -91,5 +95,22 @@ process.on("unhandledRejection", e => {
     log.error(e);
   }
 });
-gracefulShutdown(server);
-module.exports = app; //for testing purposes
+
+gracefulShutdown(server, {
+  signals: "SIGINT SIGTERM",
+  timeout: 10000,
+  development: false,
+  onShutdown: async (signal) => {
+    log.info(`HTTP Server is shutting down...(${signal})`);
+    await kafka.close();
+    await pg.close();
+    await redis.close();
+    log.info(`db connections are closed`);
+  },
+  finally: () => {
+    log.info("Server gracefully shutted down.");
+    log.close();
+  }
+});
+
+module.exports = { app, server }; //for testing purposes

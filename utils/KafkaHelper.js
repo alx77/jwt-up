@@ -11,5 +11,6 @@ const kafka = new Kafka({
 
 module.exports = {
   producer: kafka.producer(),
-  consumer: kafka.consumer({ groupId: "test-group" })
+  consumer: kafka.consumer({ groupId: cfg.get("KAFKA_CONSUMER_GROUP") }),
+  CompressionTypes
 };
