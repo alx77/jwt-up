@@ -22,8 +22,6 @@ class PostgresHelper {
       conn = await this.pool.connect();
       const response = await this.pool.query(q, params);
       return resultProcessor ? resultProcessor(res) : response;
-    } catch (e) {
-      throw e;
     } finally {
       conn && conn.release(true);
     }

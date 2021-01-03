@@ -16,8 +16,32 @@
     {
       "function": "activate",
       "method": "get",
-      "route": "/activate",
+      "route": "/activate/:code",
+      "preprocess": false,
+      "auth": false,
+      "validate": false
+    },
+    {
+      "function": "login",
+      "method": "post",
+      "route": "/login",
+      "preprocess": false,
+      "auth": false,
+      "validate": true
+    },
+    {
+      "function": "refreshToken",
+      "method": "get",
+      "route": "/token",
       "preprocess": true,
+      "auth": true,
+      "validate": false
+    },
+    {
+      "function": "jwk",
+      "method": "get",
+      "route": "/jwk",
+      "preprocess": false,
       "auth": false,
       "validate": false
     },
@@ -25,7 +49,7 @@
       "function": "read",
       "summary": "Get user by id",
       "method": "get",
-      "route": "/user/:uid",
+      "route": "/user/:user_id",
       "preprocess": true,
       "auth": true,
       "validate": true
@@ -41,7 +65,7 @@
     },
     {
       "function": "update",
-      "method": "patch",
+      "method": "put",
       "route": "/user",
       "preprocess": true,
       "auth": true,
@@ -50,7 +74,7 @@
     {
       "function": "del",
       "method": "delete",
-      "route": "/user/:uid",
+      "route": "/user/:user_id",
       "preprocess": true,
       "auth": true,
       "validate": true
@@ -61,7 +85,8 @@
       "route": "/users",
       "preprocess": true,
       "auth": true,
-      "validate": true
+      "validate": true,
+      "postvalidate": true
     }
   ]
 }

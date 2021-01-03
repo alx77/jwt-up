@@ -4,7 +4,7 @@ const nconf = require("nconf");
 var os = require("os");
 var hostname = os.hostname();
 
-const configFile = path.join(__dirname, "../config.json");
+const configFile = path.join(__dirname, "../../config.json");
 try {
   fs.accessSync(configFile, fs.constants.R_OK);
   nconf.file(configFile);

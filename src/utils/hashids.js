@@ -19,7 +19,7 @@ function decodeId(hashid) {
   if (!!idArr.length) {
     return idArr[0];
   }
-  throw new Error("Error during id decoding");
+  throw new Error("WRONG_HASH_ID");
 }
 
 module.exports = { encodeId, decodeId };

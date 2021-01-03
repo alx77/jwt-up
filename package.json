@@ -15,23 +15,34 @@
   },
   "scripts": {
     "start": "node index.js",
+    "watch": "nodemon index.js",
     "test": "mocha 'test/**/*.test.js' --bail",
     "test:g": "mocha 'test/**/*.test.js' --grep",
     "test:i": "dev/test-runner.sh start && mocha 'test/**/*.it.js' --bail && dev/test-runner.sh",
-    "test:i:g": "dev/test-runner.sh start && mocha 'test/**/*.it.js' --grep && dev/test-runner.sh"
+    "test:i:g": "dev/test-runner.sh start && mocha 'test/**/*.it.js' --grep && dev/test-runner.sh",
+    "startenv": "dev/test-runner.sh start",
+    "stopenv": "dev/test-runner.sh stop"
+  },
+  "nodemonConfig": {
+    "ext": "*.js, *.json",
+    "ignore": [
+      "log/*",
+      "test/*",
+      "db/*"
+    ],
+    "delay": "2500"
   },
   "dependencies": {
     "@godaddy/terminus": "^4.3.1",
     "@hapi/joi": "^16.1.8",
     "ajv": "^5.5.2",
     "axios": "^0.19.2",
-    "bcrypt": "^4.0.1",
-    "bcryptjs": "^2.4.3",
+    "bcrypt": "^5.0.0",
     "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
     "express-prom-bundle": "^5.1.5",
     "fs": "latest",
-    "hashids": "^2.2.1",
+    "hashids": "^2.2.8",
     "http": "latest",
     "http-graceful-shutdown": "^2.3.2",
     "iconv-lite": "^0.5.1",
@@ -43,18 +54,22 @@
     "jsonwebtoken": "^8.5.1",
     "kafkajs": "^1.12.0",
     "kafkajs-snappy": "^1.1.0",
+    "knex": "^0.21.14",
     "lynx": "^0.2.0",
     "mime": "^2.4.4",
-    "moment": "^2.24.0",
+    "moment": "^2.29.1",
     "mongodb": "^3.5.5",
     "nanoid": "^2.1.11",
     "nconf": "^0.10.0",
     "nodejs": "latest",
-    "nodemailer": "^6.4.5",
+    "nodemailer": "^6.4.6",
+    "nodemon": "^2.0.2",
     "path": "latest",
-    "pg": "^7.18.2",
+    "pg": "^8.5.1",
     "prom-client": "^12.0.0",
     "promise-redis": "0.0.5",
+    "qs": "^6.9.3",
+    "rasha": "^1.2.5",
     "supertest": "^4.0.2",
     "swagger-ui-express": "^4.1.3",
     "url": "latest",
@@ -65,6 +80,6 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "mocha": "^6.2.2",
-    "rewire": "^4.0.1"
+    "rewire": "^5.0.0"
   }
 }

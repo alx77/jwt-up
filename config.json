@@ -11,7 +11,6 @@
     "console": "debug"
   },
   "NODE_ENV": "development",
-  "SERVER_KEY": "mysupersecret",
   "HASHIDS_SALT": "mysupersalt",
   "MONGO_URL": "mongodb://root:example@localhost:27017",
   "MONGO_DB_NAME": "sso",
@@ -20,7 +19,16 @@
   "REDIS_PORT": 6379,
   "POSTGRES_CONN": "postgres://postgres:secret@localhost:5432/ugolok",
   "KAFKA_HOST": "localhost:9092",
-  "KAFKA_ACTIVATION_TOPIC":"com.ugolok.notifications",
-  "KAFKA_CONSUMER_GROUP":"notifications-group",
-  "USER_ACTIVATION_DELAY":3600
+  "KAFKA_SASL_USERNAME": "admin",
+  "KAFKA_SASL_PASSWORD": "admin-secret",
+  "KAFKA_SASL_ENABLED": false,
+  "KAFKA_SSL_ENABLED": false,
+  "KAFKA_ACTIVATION_TOPIC": "com.ugolok.notifications",
+  "KAFKA_CONSUMER_GROUP": "notifications-group",
+  "USER_ACTIVATION_DELAY": 84600,
+  "ONETIME_PASSWORD_DELAY": 600,
+  "PUBLIC_KEY_FILE": "RS256.key.pub",
+  "PRIVATE_KEY_FILE": "jwt.key",
+  "TOKEN_EXPIRES_SEC": 10800,
+  "TOKEN_ISSUER": "https://demo.com/oauth2/default"
 }

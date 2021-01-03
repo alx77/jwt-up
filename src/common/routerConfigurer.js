@@ -1,10 +1,9 @@
 const path = require("path");
 const fs = require("fs");
 const joi = require("joi");
-const cfg = require("./config");
-const log = require("./logger");
-const jwt = require("jsonwebtoken");
 const j2s = require("joi-to-swagger");
+const qs = require("qs");
+const jwtHelper = require("../utils/JwtHelper");
 
 const { encodeId, decodeId } = require("../utils/hashids");
 
@@ -23,9 +22,9 @@ function auth(role) {
   return (req, res, next) => {
     const authorization = req.preprocessed.headers.authorization;
     if (!authorization) {
-      return res.sendStatus(403);
-    } else if (!authorization.roles || !authorization.roles.includes(role)) {
       return res.sendStatus(401);
+    } else if (!authorization.roles || !authorization.roles.includes(role)) {
+      //return res.sendStatus(403); //TODO implement real authorization check
     }
     return next();
   };
@@ -33,6 +32,7 @@ function auth(role) {
 
 function validate(validator) {
   return (req, res, next) => {
+    req.preprocessed && Object.assign(req, req.preprocessed);
     ({ error } = joi.validate(req, validator));
     if (!!error) {
       throw error;
@@ -42,11 +42,13 @@ function validate(validator) {
 }
 
 const actions = {
-  "hash-decode": id => decodeId(id),
-  "jwt-decode": token => {
-    if (!token) throw new Error("Bad jwt");
-    return jwt.verify(token.split(" ")[1], cfg.get("SERVER_KEY"));
-  }
+  "hash-decode": (id) => decodeId(id),
+  "jwt-decode": (bearer) => {
+    if (!bearer) throw new Error("Bearer is empty");
+    const token = bearer.split(" ")[1];
+    return jwtHelper.decodeSync(token);
+  },
+  qs: (query) => query && qs.parse(query),
 };
 
 function preprocess(rules) {
@@ -62,34 +64,34 @@ function preprocess(rules) {
           const oldValue = req[section][key];
           const newValue = actions[rule[key]](oldValue);
           return Object.assign({}, acc, { [key]: newValue });
-        }, {})
+        }, {}),
       });
     }, {});
     return next();
   };
 }
 
-module.exports.configure = function(router, swaggerBuilder) {
+module.exports.configure = function (router, swaggerBuilder) {
   const controllersPath = path.join(__dirname, "../controllers");
-  fs.readdirSync(controllersPath).forEach(cntrName => {
-    const cntrPath = path.join(controllersPath, cntrName);
+  fs.readdirSync(controllersPath).forEach((controllerName) => {
+    const cntrPath = path.join(controllersPath, controllerName);
     const configPath = path.join(cntrPath, "function.json");
     if (!fs.existsSync(configPath)) return;
     const config = require(configPath);
     swaggerBuilder &&
       swaggerBuilder.addTag({
-        name: cntrName,
-        description: config.description
+        name: controllerName,
+        description: config.description,
       });
 
     config.enabled &&
-      config.bindings.forEach(b => {
+      config.bindings.forEach((b) => {
         if (!b.function || !b.route || !b.method)
           throw new Error(
-            `'function.json' for controller: '${cntrName}', route: '${bindings.route}', method: '${bindings.method}' misconfigured`
+            `'function.json' for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' misconfigured`
           );
         const middleware = prepareMiddleware(
-          cntrName,
+          controllerName,
           cntrPath,
           b,
           swaggerBuilder
@@ -99,27 +101,17 @@ module.exports.configure = function(router, swaggerBuilder) {
   });
 };
 
-function prepareMiddleware(cntrName, cntrPath, bindings, swaggerBuilder) {
+function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
   const params = [bindings.route];
 
-  if (bindings.preprocess) {
-    const preprocessors = require(path.join(cntrPath, "preprocessor.js"));
-    if (!preprocessors || !preprocessors[bindings.function])
-      throw new Error(
-        `Preprocessor for controller: '${cntrName}', route: '${bindings.route}', method: '${bindings.method}' is not exist`
-      );
-    params.push(preprocess(preprocessors[bindings.function]));
-  }
-
-  bindings.auth && params.push(auth("admin"));
-
+  //validator setup
   if (bindings.validate) {
     const validationSchema = require(path.join(cntrPath, "validator.js"))[
       bindings.function
     ];
     if (!validationSchema)
       throw new Error(
-        `Validator for controller: '${cntrName}', route: '${bindings.route}', method: '${bindings.method}' is not exist`
+        `Validator for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
       );
     params.push(validate(validationSchema));
 
@@ -128,17 +120,48 @@ function prepareMiddleware(cntrName, cntrPath, bindings, swaggerBuilder) {
         swaggerBuilder,
         bindings,
         validationSchema,
-        cntrName
+        controllerName
       );
   }
+
+  //preprocessor setup
+  if (bindings.preprocess) {
+    const preprocessors = require(path.join(cntrPath, "preprocessor.js"));
+    if (!preprocessors || !preprocessors[bindings.function])
+      throw new Error(
+        `Preprocessor for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
+      );
+    params.push(preprocess(preprocessors[bindings.function]));
+  }
+
+  //postvalidator setup
+  if (bindings.postvalidate) {
+    const postvalidationSchema = require(path.join(
+      cntrPath,
+      "postvalidator.js"
+    ))[bindings.function];
+    if (postvalidationSchema) params.push(validate(postvalidationSchema));
+  }
+
+  //auth setup
+  bindings.auth && params.push(auth("admin"));
 
   let func = require(cntrPath)[bindings.function];
   if (!func) {
     throw new Error(
-      `Function '${bindings.function}' for controller: '${cntrName}', route: '${bindings.route}', method: '${bindings.method}' is not exist`
+      `Function '${bindings.function}' for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
     );
   }
-  params.push(func);
+
+  const stub = async (req, res, next) => {
+    try {
+      await func(req, res, next);
+    } catch (e) {
+      next(e);
+    }
+  };
+
+  params.push(stub);
   return params;
 }
 
@@ -146,7 +169,7 @@ function setupSwaggerSections(
   swaggerBuilder,
   binding,
   validationSchema,
-  cntrName
+  controllerName
 ) {
   const { function: fn, summary, description, method, route, auth } = binding;
 
@@ -157,45 +180,45 @@ function setupSwaggerSections(
       const schemaName = fn + "_" + key;
       swaggerBuilder.addSchemas({ [schemaName]: swagger });
       const rule = {
-        tags: [cntrName],
+        tags: [controllerName],
         summary,
         description,
         operationId: fn,
         responses: {
-          "200": {
-            description: "OK"
+          200: {
+            description: "OK",
           },
-          "201": {
-            description: "Created"
+          201: {
+            description: "Created",
           },
-          "401": {
-            description: "Unauthorized"
+          401: {
+            description: "Unauthorized",
           },
-          "403": {
-            description: "Forbidden"
+          403: {
+            description: "Forbidden",
           },
-          "404": {
-            description: "Not Found"
+          404: {
+            description: "Not Found",
           },
-          "405": {
-            description: "Invalid input"
-          }
-        }
+          405: {
+            description: "Invalid input",
+          },
+        },
       };
-      if (["post", "patch"].includes(method))
+      if (["post", "put", "patch"].includes(method))
         Object.assign(rule, {
           requestBody: {
             content: {
               "application/json": {
                 schema: {
-                  $ref: "#/components/schemas/" + schemaName
-                }
-              }
-            }
-          }
+                  $ref: "#/components/schemas/" + schemaName,
+                },
+              },
+            },
+          },
         });
       const pathParams = [];
-      const routeComponents = route.split("/").map(com => {
+      const routeComponents = route.split("/").map((com) => {
         if (com.indexOf(":") === 0) {
           pathParams.push(com.substring(1));
           return `{${com.substring(1)}}`;
@@ -208,13 +231,13 @@ function setupSwaggerSections(
       let parameters = [];
       if ("params" == key)
         parameters = parameters.concat(
-          pathParams.map(param => ({
+          pathParams.map((param) => ({
             name: param,
             in: "path",
             required: true,
             schema: {
-              type: "string"
-            }
+              type: "string",
+            },
           }))
         );
 
@@ -229,8 +252,8 @@ function setupSwaggerSections(
               type: value.type,
               maximum: value.maximum,
               default: value.default,
-              enum: value.enum
-            }
+              enum: value.enum,
+            },
           }))
         );
 
@@ -240,9 +263,9 @@ function setupSwaggerSections(
         Object.assign(rule, {
           security: [
             {
-              Bearer: ["global"]
-            }
-          ]
+              Bearer: ["global"],
+            },
+          ],
         });
 
       swaggerBuilder.addPath(swaggerRoute, method, rule);

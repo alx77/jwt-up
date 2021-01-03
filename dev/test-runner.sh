@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
+PWD="$(pwd)"
+echo $PWD
+cd "$(dirname "$0")"
 if [[ $1 == 'start' ]]; then
-    docker-compose -f dev/docker-compose.postgres.yml -f dev/docker-compose.redis.yml -f dev/docker-compose.kafka.yml up -d
+    docker-compose -f docker-compose.postgres.yml -f docker-compose.redis.yml -f docker-compose.kafka.yml up -d
     
     DOCKER_RUNNING_INSTANCES=1
     while :; do
@@ -9,7 +12,8 @@ if [[ $1 == 'start' ]]; then
         echo "waiting for healthy instances...$DOCKER_RUNNING_INSTANCES"
         sleep 3
     done
-    sleep 5 #for kafka elections
+    sleep 7 #for kafka elections
 else
-    docker-compose -f dev/docker-compose.postgres.yml -f dev/docker-compose.redis.yml -f dev/docker-compose.kafka.yml down
+    docker-compose -f docker-compose.postgres.yml -f docker-compose.redis.yml -f docker-compose.kafka.yml down
 fi
+cd $PWD

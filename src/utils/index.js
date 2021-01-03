@@ -15,4 +15,8 @@ function jsonEscape(json) {
   );
 }
 
-module.exports = { jsonEscape };
+function pager({ page, size }) {
+  return { limit: size, offset: size * page };
+}
+
+module.exports = { jsonEscape, pager };
