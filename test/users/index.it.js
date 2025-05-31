@@ -6,7 +6,7 @@ const rewire = require("rewire");
 const service = rewire("../../src/services/users");
 const si = require("../StorageInitializer");
 const redis = require("../../src/utils/RedisHelper");
-const { consumer } = require("../../src/utils/KafkaHelper");
+//const { consumer } = require("../../src/utils/KafkaHelper");
 const cfg = require("../../src/common/config");
 const expect = chai.expect;
 const request = require("supertest");
@@ -69,27 +69,27 @@ describe(`@users tests`, function () {
       });
 
     //consuming kafka
-    var messageValue;
-    consumer.connect().then(() => {
-      consumer
-        .subscribe({
-          topic: cfg.get("KAFKA_ACTIVATION_TOPIC"),
-          fromBeginning: true,
-        })
-        .then(() => {
-          consumer.run({
-            // eachBatch: async ({ batch }) => {
-            //   console.log(batch)
-            // },
-            eachMessage: async ({ topic, partition, message }) => {
-               const prefix = `${topic}[${partition} | ${message.offset}] / ${message.timestamp}`;
-               console.log(`- ${prefix} ${message.key}#${message.value}`);
-              messageValue = JSON.parse(message.value);
-              consumer.disconnect();
-            },
-          });
-        });
-    });
+    // var messageValue;
+    // consumer.connect().then(() => {
+    //   consumer
+    //     .subscribe({
+    //       topic: cfg.get("KAFKA_ACTIVATION_TOPIC"),
+    //       fromBeginning: true,
+    //     })
+    //     .then(() => {
+    //       consumer.run({
+    //         // eachBatch: async ({ batch }) => {
+    //         //   console.log(batch)
+    //         // },
+    //         eachMessage: async ({ topic, partition, message }) => {
+    //            const prefix = `${topic}[${partition} | ${message.offset}] / ${message.timestamp}`;
+    //            console.log(`- ${prefix} ${message.key}#${message.value}`);
+    //           messageValue = JSON.parse(message.value);
+    //           consumer.disconnect();
+    //         },
+    //       });
+    //     });
+    // });
 
     setTimeout(() => {
       const activationCode =

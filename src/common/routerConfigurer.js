@@ -30,10 +30,15 @@ function auth(role) {
   };
 }
 
-function validate(validator) {
+function validate(schema) {
   return (req, res, next) => {
-    req.preprocessed && Object.assign(req, req.preprocessed);
-    ({ error } = joi.validate(req, validator));
+    let { error } = schema.validate({
+      body:req.body,
+      params:req.params,
+      query:req.query,
+      headers:req.headers,
+      ...(req.preprocessed || {})
+    });
     if (!!error) {
       throw error;
     }
@@ -173,8 +178,10 @@ function setupSwaggerSections(
 ) {
   const { function: fn, summary, description, method, route, auth } = binding;
 
-  validationSchema._inner.children &&
-    validationSchema._inner.children.forEach(({ key, schema }) => {
+  var keys = validationSchema.describe().keys;
+  keys &&
+    Object.keys(keys).forEach(key => {
+      schema = validationSchema.extract(key);
       if ("headers" == key) return;
       const { swagger } = j2s(schema);
       const schemaName = fn + "_" + key;

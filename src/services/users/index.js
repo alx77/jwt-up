@@ -9,7 +9,7 @@ const StatusError = require("../../exceptions/StatusError");
 const sqlFilter = require("../../utils/SqlFilterBuilder");
 const jwtHelper = require("../../utils/JwtHelper");
 const { encodeId } = require("../../utils/hashids");
-const { producer, CompressionTypes } = require("../../utils/KafkaHelper");
+//const { producer, CompressionTypes } = require("../../utils/KafkaHelper");
 
 const ACTIVATION_CODE_PREFIX = "act_";
 
@@ -40,16 +40,16 @@ class UserService {
       userStr
     );
 
-    log.debug(`queuing user: ${userWithCodeStr}`);
-    await producer.connect();
-    await producer.send({
-      topic: cfg.get("KAFKA_ACTIVATION_TOPIC"),
-      messages: [{ key: activationCode, value: userWithCodeStr }],
-      timeout: 15000,
-      compression: CompressionTypes.Snappy,
-    });
-    await producer.disconnect();
-    log.debug(`user ${user.email} was sent to queue`);
+    // log.debug(`queuing user: ${userWithCodeStr}`);
+    // await producer.connect();
+    // await producer.send({
+    //   topic: cfg.get("KAFKA_ACTIVATION_TOPIC"),
+    //   messages: [{ key: activationCode, value: userWithCodeStr }],
+    //   timeout: 15000,
+    //   compression: CompressionTypes.Snappy,
+    // });
+    // await producer.disconnect();
+    // log.debug(`user ${user.email} was sent to queue`);
   }
 
   async activate(activationCode) {

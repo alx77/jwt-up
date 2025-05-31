@@ -4,7 +4,6 @@ const bodyParser = require("body-parser");
 const swaggerUi = require("swagger-ui-express");
 //const prometheusExpress = require("express-prom-bundle");
 
-//const gracefulShutdown = require("http-graceful-shutdown");
 const { setHeaders } = require("./src/common/headers");
 const { configure } = require("./src/common/routerConfigurer");
 const SwaggerBuilder = require("./src/common/SwaggerBuilder");
@@ -15,7 +14,7 @@ const app = express();
 const router = express.Router();
 const server = createServer(app);
 
-const kafka = require("./src/utils/KafkaHelper");
+//const kafka = require("./src/utils/KafkaHelper");
 const pg = require("./src/utils/PostresHelper");
 const redis = require("./src/utils/RedisHelper");
 
@@ -25,7 +24,7 @@ app.use(express.static(__dirname + "/web"));
 app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // to support URL-encoded bodies
 
-app.use("*", function (req, res, next) {
+app.use("/{*splat}", function (req, res, next) {
   log.debug("url:" + req.url);
   log.debug("params:" + JSON.stringify(req.params));
   log.debug("query:" + JSON.stringify(req.query));
@@ -65,7 +64,7 @@ swaggerBuilder.addSecuritySchemes({
 });
 
 const swaggerDocument = swaggerBuilder.build();
-//console.log("SWAGGER:", JSON.stringify(swaggerDocument));
+console.log("SWAGGER:", JSON.stringify(swaggerDocument));
 const options = {
   explorer: true,
 };
