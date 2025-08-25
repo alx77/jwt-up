@@ -11,10 +11,10 @@
     "console": "debug"
   },
   "NODE_ENV": "development",
-  "HASHIDS_SALT": "mysupersalt",
   "REDIS_HOST": "localhost",
   "REDIS_PORT": 6379,
-  "POSTGRES_CONN": "postgres://postgres:secret@localhost:5432/ugolok",
+  "POSTGRES_CONN": "postgres://postgres:secret@localhost:25432/portal",
+  "POSTGRES_POOL_SIZE": 5,
   "KAFKA_HOST": "localhost:9092",
   "KAFKA_SASL_USERNAME": "admin",
   "KAFKA_SASL_PASSWORD": "admin-secret",
@@ -24,8 +24,9 @@
   "KAFKA_CONSUMER_GROUP": "notifications-group",
   "USER_ACTIVATION_DELAY": 84600,
   "ONETIME_PASSWORD_DELAY": 600,
-  "PUBLIC_KEY_FILE": "RS256.key.pub",
-  "PRIVATE_KEY_FILE": "jwt.key",
-  "TOKEN_EXPIRES_SEC": 10800,
-  "TOKEN_ISSUER": "https://demo.com/oauth2/default"
+  "PUBLIC_KEY_FILE": "ES256.pub.key",
+  "PRIVATE_KEY_FILE": "ES256.priv.key",
+  "TOKEN_EXPIRES_SEC": 600,
+  "REFRESH_TOKEN_EXPIRES_SEC": 10800,
+  "TOKEN_ISSUER": "https://ideaficus.com/oauth2/default"
 }

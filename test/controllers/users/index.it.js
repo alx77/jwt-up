@@ -3,14 +3,14 @@ const chai = require("chai");
 const axios = require("axios");
 const validator = require("./validator");
 const rewire = require("rewire");
-const service = rewire("../../src/services/users");
-const si = require("../StorageInitializer");
-const redis = require("../../src/utils/RedisHelper");
+const service = rewire("../../../src/services/users");
+const si = require("../../StorageInitializer");
+const redis = require("../../../src/utils/RedisHelper");
 //const { consumer } = require("../../src/utils/KafkaHelper");
-const cfg = require("../../src/common/config");
+const cfg = require("../../../src/common/config");
 const expect = chai.expect;
 const request = require("supertest");
-var { app, server } = require("../../index");
+var { app, server } = require("../../../../index");
 
 const ACTIVATION_CODE_PREFIX = "act_";
 

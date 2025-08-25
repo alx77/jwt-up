@@ -11,20 +11,22 @@ describe(`@JwtHelper tests`, function () {
       uid: "00u4gg8e8n3mzdL6P0x6",
       scp: ["groups", "openid", "profile", "email"],
       sub: "jwt-up@ugolok.com",
-      groups: ["TMS test users", "Everyone"],
+      groups: ["test users", "Everyone"],
     };
 
-    const encoded = await jwtHelper.encode(obj);
-    const decoded = await jwtHelper.decode(encoded);
+    const encoded = await jwtHelper.getAccessToken(obj);
+    const decoded = await jwtHelper.decodeToken(encoded);
     delete decoded.exp;
     delete decoded.iat;
     delete decoded.iss;
     expect(obj).deep.equal(decoded);
 
-    const decodedSync = jwtHelper.decodeSync(encoded);
+    const decodedSync = jwtHelper.decodeTokenSync(encoded);
     delete decodedSync.exp;
     delete decodedSync.iat;
     delete decodedSync.iss;
     expect(obj).deep.equal(decodedSync);
+
+    const jwk = await jwtHelper.getJwk();
   });
 });

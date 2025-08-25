@@ -1,20 +1,33 @@
 const cfg = require("../common/config");
 const jwt = require("jsonwebtoken");
-const rasha = require("rasha");
 const fs = require("fs");
+const crypto = require("crypto");
+const { encode } = require("./UuidBase64");
+
 
 class JwtHelper {
   constructor(publicKeyFile, privateKeyFile) {
-    this.publicKey = fs.readFileSync(publicKeyFile).toString("utf8");
-    this.privateKey = fs.readFileSync(privateKeyFile).toString("utf8");
+    this.publicKey = fs.readFileSync(publicKeyFile, "utf8");
+    this.privateKey = fs.readFileSync(privateKeyFile, "utf8");
+    this.issuer = cfg.get("TOKEN_ISSUER");
   }
 
   async getJwk() {
-    const jwk = await rasha.import({ pem: this.publicKey });
-    return { keys: [Object.assign({}, jwk, { alg: "RS256", use: "sig" })] };
+    const jwk = await crypto
+      .createPublicKey(this.publicKey)
+      .export({ format: "jwk" });
+    return {
+      keys: [
+        {
+          ...jwk,
+          alg: "ES256",
+          use: "sig",
+        },
+      ],
+    };
   }
 
-  async encode(obj) {
+  async getAccessToken(obj) {
     return await new Promise((res, rej) =>
       jwt.sign(
         {
@@ -24,20 +37,43 @@ class JwtHelper {
               Math.floor(Date.now() / 1000) +
               Number.parseInt(cfg.get("TOKEN_EXPIRES_SEC")),
           },
+          sub: obj.user_id,
+          jti: encode(crypto.randomUUID()),
           ...obj,
         },
         this.privateKey,
-        { algorithm: "RS256" },
+        { algorithm: "ES256" },
         (err, token) => (err && rej(err)) || res(token)
       )
     );
   }
 
-  decodeSync(token) {
-    return jwt.verify(token, this.publicKey, { issuer: this.issuer });
+  async getRefreshToken(obj) {
+    return await new Promise((res, rej) =>
+      jwt.sign(
+        {
+          ...{
+            iss: cfg.get("TOKEN_ISSUER"),
+            exp:
+              Math.floor(Date.now() / 1000) +
+              Number.parseInt(cfg.get("REFRESH_TOKEN_EXPIRES_SEC")),
+          },
+          sub: obj.user_id,
+          jti: encode(crypto.randomUUID()),
+          ...obj
+        },
+        this.privateKey,
+        { algorithm: "ES256" },
+        (err, token) => (err && rej(err)) || res(token)
+      )
+    );
   }
 
-  async decode(token) {
+  decodeTokenSync(token) {
+    return jwt.verify(token, this.publicKey, { iss: this.issuer });
+  }
+
+  async decodeToken(token) {
     return await new Promise((res, rej) =>
       jwt.verify(
         token,

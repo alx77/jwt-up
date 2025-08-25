@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "type": "http",
+  "description": "Service to provide JWK with public key",
+  "bindings": [
+    {
+      "function": "jwk",
+      "method": "get",
+      "route": "/jwk",
+      "preprocess": false,
+      "validate": true
+    }
+  ]
+}

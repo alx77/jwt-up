@@ -15,7 +15,7 @@ const router = express.Router();
 const server = createServer(app);
 
 //const kafka = require("./src/utils/KafkaHelper");
-const pg = require("./src/utils/PostresHelper");
+const { pg } = require("./src/utils/KnexHelper");
 const redis = require("./src/utils/RedisHelper");
 
 //app.disable("etag");
@@ -64,7 +64,7 @@ swaggerBuilder.addSecuritySchemes({
 });
 
 const swaggerDocument = swaggerBuilder.build();
-console.log("SWAGGER:", JSON.stringify(swaggerDocument));
+//console.log("SWAGGER:", JSON.stringify(swaggerDocument));
 const options = {
   explorer: true,
 };
@@ -92,27 +92,11 @@ process.on("unhandledRejection", (e) => {
   }
 });
 
-// gracefulShutdown(server, {
-//   signals: "SIGINT SIGTERM",
-//   timeout: 10000,
-//   development: false,
-//   onShutdown: async (signal) => {
-//     log.info(`HTTP Server is shutting down...(${signal})`);
-//     await kafka.close();
-//     await pg.close();
-//     await redis.close();
-//     log.info(`db connections are closed`);
-//   },
-//   finally: () => {
-//     log.info("Server gracefully shutted down.");
-//     log.close();
-//   }
-// });
 async function gracefulShutdown(signal) {
   log.info(`${signal} signal received. HTTP Server is shutting down...`);
   server.close(async () => {
-    await pg.close();
-    await redis.close();
+    await pg.destroy();
+    await redis.quit();
     log.info("DB connections are closed. Server gracefully shut down.");
     log.close();
   });

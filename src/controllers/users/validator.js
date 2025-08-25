@@ -24,22 +24,21 @@ const user_id = Joi.string().max(200).required().description("ID");
 const email = Joi.string().email().required().description("Email");
 const user = {
   name: Joi.string()
-    .alphanum()
+    .regex(/^\w+(?:\s+\w+)*$/)
     .max(30)
     .optional()
     .description("Username (nickname)"),
+  login: Joi.string().alphanum().max(30).required(),
   email,
   password,
   captcha_token: Joi.string().description(
     "Token to confirm user is real (recapcha)"
   ),
   ip: Joi.string().ip({ version: ["ipv4", "ipv6"], cidr: "forbidden" }),
-  payload: Joi.object().unknown(),
-  securables: Joi.object().unknown(),
 };
 
 module.exports = {
-  create: Joi.object()
+  register: Joi.object()
     .unknown()
     .keys({
       body: Joi.object().keys(user).required(),
@@ -52,19 +51,15 @@ module.exports = {
         password,
       }),
     }),
+  refreshToken: Joi.object().unknown().keys({
+    params: Joi.object(),
+    headers,
+  }),
   read: Joi.object()
     .unknown()
     .keys({
       params: Joi.object().keys({
-        user_id,
-      }),
-      headers,
-    }),
-  readByEmail: Joi.object()
-    .unknown()
-    .keys({
-      params: Joi.object().keys({
-        email,
+        user_id: user_id.optional(),
       }),
       headers,
     }),
@@ -89,22 +84,13 @@ module.exports = {
         .required(),
       headers,
     }),
-  list: Joi.object()
+  activate: Joi.object()
     .unknown()
     .keys({
-      query: Joi.object()
+      params: Joi.object()
         .keys({
-          page: Joi.number()
-            .optional()
-            .default(0)
-            .description("Page number (from 0)"),
-          size: Joi.number()
-            .max(100)
-            .optional()
-            .default(10)
-            .description("Page size (10 by default)"),
+          code: Joi.string().required(),
         })
         .required(),
-      headers,
     }),
 };

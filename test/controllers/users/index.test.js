@@ -2,8 +2,8 @@ const Joi = require("joi");
 const chai = require("chai");
 const validator = require("./validator");
 const rewire = require("rewire");
-const service = rewire("../../src/services/users");
-const bcrypt = require("bcrypt");
+const service = rewire("../../../src/services/users");
+const bcrypt = require("bcryptjs");
 const expect = chai.expect;
 
 service.__set__({

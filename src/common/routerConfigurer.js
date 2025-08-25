@@ -1,11 +1,8 @@
 const path = require("path");
 const fs = require("fs");
-const joi = require("joi");
 const j2s = require("joi-to-swagger");
-const qs = require("qs");
 const jwtHelper = require("../utils/JwtHelper");
-
-const { encodeId, decodeId } = require("../utils/hashids");
+const StatusError = require("../exceptions/StatusError");
 
 function bindController(router, name, middleware) {
   if (!name) throw new Error("HTTP method not specified");
@@ -18,13 +15,20 @@ function bindController(router, name, middleware) {
   fn.apply(router, middleware);
 }
 
-function auth(role) {
+function auth(roles) {
   return (req, res, next) => {
     const authorization = req.preprocessed.headers.authorization;
     if (!authorization) {
-      return res.sendStatus(401);
-    } else if (!authorization.roles || !authorization.roles.includes(role)) {
-      //return res.sendStatus(403); //TODO implement real authorization check
+      throw new StatusError(401, "UNAUTHORIZED");
+    } else if (
+      !(
+        (roles === true && !authorization.roles) ||
+        (roles !== true &&
+          authorization.roles &&
+          authorization.roles.some((it) => roles.includes(it)))
+      )
+    ) {
+      throw new StatusError(403, "FORBIDDEN");
     }
     return next();
   };
@@ -33,11 +37,11 @@ function auth(role) {
 function validate(schema) {
   return (req, res, next) => {
     let { error } = schema.validate({
-      body:req.body,
-      params:req.params,
-      query:req.query,
-      headers:req.headers,
-      ...(req.preprocessed || {})
+      body: req.body,
+      params: req.params,
+      query: req.query,
+      headers: req.headers,
+      ...(req.preprocessed || {}),
     });
     if (!!error) {
       throw error;
@@ -47,13 +51,19 @@ function validate(schema) {
 }
 
 const actions = {
-  "hash-decode": (id) => decodeId(id),
-  "jwt-decode": (bearer) => {
+  //TODO get rid of preprocessor, make it work from function.js->auth: "jwt-decode"
+  "jwt-decode": (bearer, res) => {
     if (!bearer) throw new Error("Bearer is empty");
     const token = bearer.split(" ")[1];
-    return jwtHelper.decodeSync(token);
+    try {
+      return jwtHelper.decodeTokenSync(token);
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        throw new StatusError(403, "TOKEN_EXPIRED");
+      }
+      throw err;
+    }
   },
-  qs: (query) => query && qs.parse(query),
 };
 
 function preprocess(rules) {
@@ -67,7 +77,7 @@ function preprocess(rules) {
       return Object.assign({}, acc, {
         [section]: Object.keys(rule).reduce((acc, key) => {
           const oldValue = req[section][key];
-          const newValue = actions[rule[key]](oldValue);
+          const newValue = actions[rule[key]](oldValue, res);
           return Object.assign({}, acc, { [key]: newValue });
         }, {}),
       });
@@ -139,17 +149,8 @@ function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
     params.push(preprocess(preprocessors[bindings.function]));
   }
 
-  //postvalidator setup
-  if (bindings.postvalidate) {
-    const postvalidationSchema = require(path.join(
-      cntrPath,
-      "postvalidator.js"
-    ))[bindings.function];
-    if (postvalidationSchema) params.push(validate(postvalidationSchema));
-  }
-
   //auth setup
-  bindings.auth && params.push(auth("admin"));
+  bindings.auth && params.push(auth(bindings.auth));
 
   let func = require(cntrPath)[bindings.function];
   if (!func) {
@@ -170,6 +171,7 @@ function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
   return params;
 }
 
+//TODO make it work without validationSchema
 function setupSwaggerSections(
   swaggerBuilder,
   binding,
@@ -180,7 +182,7 @@ function setupSwaggerSections(
 
   var keys = validationSchema.describe().keys;
   keys &&
-    Object.keys(keys).forEach(key => {
+    Object.keys(keys).forEach((key) => {
       schema = validationSchema.extract(key);
       if ("headers" == key) return;
       const { swagger } = j2s(schema);
@@ -191,6 +193,7 @@ function setupSwaggerSections(
         summary,
         description,
         operationId: fn,
+        //TODO make map with codes and specify extra codes for specific endpoints
         responses: {
           200: {
             description: "OK",
@@ -209,6 +212,9 @@ function setupSwaggerSections(
           },
           405: {
             description: "Invalid input",
+          },
+          409: {
+            description: "Conflict",
           },
         },
       };

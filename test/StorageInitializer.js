@@ -1,4 +1,4 @@
-const pg = require("../src/utils/PostresHelper");
+const { pg } = require("../src/utils/KnexHelper");
 const redis = require("../src/utils/RedisHelper");
 const path = require("path");
 const fs = require("fs");
@@ -26,7 +26,7 @@ class StorageInitializer {
   }
 
   destroy() {
-    pg.close();
+    pg.destroy();
     redis.close();
   }
 }

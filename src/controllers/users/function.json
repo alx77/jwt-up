@@ -1,14 +1,14 @@
 {
   "enabled": true,
   "type": "http",
-  "description": "Service to make JWT more convenient in use",
+  "description": "Service to operate with users",
   "bindings": [
     {
-      "function": "create",
-      "summary": "Add new user",
+      "function": "register",
+      "summary": "Register new user",
       "description": "This method creates temporal users until they activate it by email",
       "method": "post",
-      "route": "/user",
+      "route": "/auth/user",
       "preprocess": false,
       "auth": false,
       "validate": true
@@ -16,77 +16,59 @@
     {
       "function": "activate",
       "method": "get",
-      "route": "/activate/:code",
+      "route": "/auth/activate/:code",
       "preprocess": false,
       "auth": false,
-      "validate": false
+      "validate": true
     },
     {
       "function": "login",
       "method": "post",
-      "route": "/login",
+      "route": "/auth/login",
       "preprocess": false,
-      "auth": false,
       "validate": true
     },
     {
       "function": "refreshToken",
       "method": "get",
-      "route": "/token",
+      "route": "/auth/refresh",
       "preprocess": true,
       "auth": true,
-      "validate": false
+      "validate": true
     },
     {
-      "function": "jwk",
+      "function": "read",
+      "summary": "Get own user",
       "method": "get",
-      "route": "/jwk",
-      "preprocess": false,
-      "auth": false,
-      "validate": false
+      "route": "/auth/user",
+      "preprocess": true,
+      "auth": ["registered", "admin", "manager", "operator"],
+      "validate": true
     },
     {
       "function": "read",
       "summary": "Get user by id",
       "method": "get",
-      "route": "/user/:user_id",
+      "route": "/auth/user/:user_id",
       "preprocess": true,
-      "auth": true,
-      "validate": true
-    },
-    {
-      "function": "readByEmail",
-      "summary": "Get user by email",
-      "method": "get",
-      "route": "/user/:email",
-      "preprocess": true,
-      "auth": true,
+      "auth": ["admin", "manager", "operator"],
       "validate": true
     },
     {
       "function": "update",
       "method": "put",
-      "route": "/user",
+      "route": "/auth/user",
       "preprocess": true,
-      "auth": true,
+      "auth": ["registered", "admin", "manager", "operator"],
       "validate": true
     },
     {
       "function": "del",
       "method": "delete",
-      "route": "/user/:user_id",
+      "route": "/auth/user/:user_id",
       "preprocess": true,
-      "auth": true,
+      "auth": ["registered", "admin", "manager", "operator"],
       "validate": true
-    },
-    {
-      "function": "list",
-      "method": "get",
-      "route": "/users",
-      "preprocess": true,
-      "auth": true,
-      "validate": true,
-      "postvalidate": true
     }
   ]
 }
