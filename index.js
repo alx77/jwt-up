@@ -48,7 +48,7 @@ swaggerBuilder.addInfo({
   version: "1.0.0",
   title: "JWT-up server",
   contact: {
-    email: "a.furmanoff@gmail.com",
+    email: "a.furmanoff(at)gmail.com",
   },
   license: {
     name: "MIT License",

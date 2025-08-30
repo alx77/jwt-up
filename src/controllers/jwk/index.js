@@ -6,7 +6,7 @@ async function jwk(req, res) {
   const jwk = await tokenService.getJwk();
   if (!jwk) throw new Error("JWK_NOT_FOUND");
   log.info(`Jwk successfully retrieved`);
-  //    metrics.increment("users.jwk");
+  //    metrics.increment("jwk.jwk");
   res.json(jwk).end();
 }
 

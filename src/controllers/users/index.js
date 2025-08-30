@@ -64,7 +64,7 @@ async function del(req, res) {
   const result = await userService.delete(user_id);
   if (!result) throw new Error("USER_NOT_FOUND");
   log.info(`User: ${user_id} deleted`);
-  //    metrics.increment("users.updated");
+  //    metrics.increment("users.deleted");
   res.json({ status: "OK" }).end();
 }
 
@@ -77,6 +77,7 @@ module.exports = {
   update,
   del,
 };
+//TODO
 //logout
 //reset-password
 //assignRole

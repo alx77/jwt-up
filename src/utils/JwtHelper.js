@@ -6,10 +6,10 @@ const { encode } = require("./UuidBase64");
 
 
 class JwtHelper {
-  constructor(publicKeyFile, privateKeyFile) {
+  constructor(publicKeyFile, privateKeyFile, issuer) {
     this.publicKey = fs.readFileSync(publicKeyFile, "utf8");
     this.privateKey = fs.readFileSync(privateKeyFile, "utf8");
-    this.issuer = cfg.get("TOKEN_ISSUER");
+    this.issuer = issuer;
   }
 
   async getJwk() {
@@ -32,7 +32,7 @@ class JwtHelper {
       jwt.sign(
         {
           ...{
-            iss: cfg.get("TOKEN_ISSUER"),
+            iss: this.issuer,
             exp:
               Math.floor(Date.now() / 1000) +
               Number.parseInt(cfg.get("TOKEN_EXPIRES_SEC")),
@@ -53,7 +53,7 @@ class JwtHelper {
       jwt.sign(
         {
           ...{
-            iss: cfg.get("TOKEN_ISSUER"),
+            iss: this.issuer,
             exp:
               Math.floor(Date.now() / 1000) +
               Number.parseInt(cfg.get("REFRESH_TOKEN_EXPIRES_SEC")),
@@ -87,5 +87,6 @@ class JwtHelper {
 
 module.exports = new JwtHelper(
   cfg.get("PUBLIC_KEY_FILE"),
-  cfg.get("PRIVATE_KEY_FILE")
+  cfg.get("PRIVATE_KEY_FILE"),
+  cfg.get("TOKEN_ISSUER")
 );

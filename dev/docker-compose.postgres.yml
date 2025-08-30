@@ -2,37 +2,24 @@ version: '3.3'
 services:
 
   postgres:
-    image: postgres:alpine
+    image: postgres:17-alpine
     container_name: postgres-jwtup
     restart: always
     volumes:
-      - ./postgres/data:/var/lib/postgresql/data
+#      - ./postgres/data:/var/lib/postgresql/data
       - ./postgres/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh
+      - ./postgres/create.sql:/create.sql
+      - ./postgres/data.sql:/data.sql
     ports:
-      - 5432:5432
+      - 25432:5432
     networks:
       - postgres
     environment:
-      POSTGRES_DB: ugolok
+      POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret
     healthcheck:
       test: ["CMD", "nc", "-vz", "localhost", "5432"]
-      interval: 1s
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    restart: always
-    ports:
-      - 5555:80
-    networks:
-      - postgres
-    environment:
-      PGADMIN_DEFAULT_EMAIL: user@domain.com
-      PGADMIN_DEFAULT_PASSWORD: secret
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "localhost", "80"]
       interval: 1s
 
 networks:
