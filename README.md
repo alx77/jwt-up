@@ -3,10 +3,10 @@
 Feel free to replace any parts on your purpose.
 
 ## How-to run:
-#### Generating keys
+#### Generating EC keys
 ```
-ssh-keygen -t rsa -b 4096 -m PEM -f RS256.priv.key
-openssl rsa -in RS256.priv.key -pubout -outform PEM -out RS256.pub.key
+openssl ecparam -name prime256v1 -genkey -noout -out ES256.priv.key
+openssl ec -in ES256.priv.key -pubout -out ES256.pub.key
 ```
 or just run script instead
 ```
