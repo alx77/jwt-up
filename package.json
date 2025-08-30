@@ -5,13 +5,9 @@
   "author": "Alex Furmanov",
   "license": "MIT",
   "main": "index.js",
-  "homepage": "https://bitbucket.org/hragency_back/hragency_back_repo/wiki/Home",
   "repository": {
     "type": "git",
-    "url": "git+https://bitbucket.org/hragency_back/hragency_back_repo.git"
-  },
-  "bugs": {
-    "url": "https://bitbucket.org/hragency_back/hragency_back_repo/issues"
+    "url": "https://github.com/alx77/jwt-up.git"
   },
   "scripts": {
     "start": "node index.js",
@@ -52,12 +48,8 @@
     "mime": "^4.0.7",
     "moment": "^2.30.1",
     "nconf": "^0.12.1",
-    "nodejs": "latest",
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9",
-    "passport": "latest",
-    "passport-jwt": "latest",
-    "passport-local": "latest",
     "path": "latest",
     "pg": "^8.14.1",
     "supertest": "^7.1.0",
