@@ -1,4 +1,3 @@
-version: '3.3'
 services:
   zookeeper:
     image: wurstmeister/zookeeper
@@ -21,7 +20,7 @@ services:
     environment: 
       KAFKA_ADVERTISED_HOST_NAME: localhost
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "com.ugolok.notifications:1:1"
+      KAFKA_CREATE_TOPICS: "com.ideaficus.notifications:1:1"
       # KAFKA_LISTENERS: SASL_PLAINTEXT://:9092
       # KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://localhost:9092
       # KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_server_jaas.conf"

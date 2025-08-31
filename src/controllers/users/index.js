@@ -5,7 +5,8 @@ const userService = require("../../services/users");
 async function register(req, res) {
   const user = req.body;
   //TODO check captcha `user.captcha_token`
-  await userService.registerUser(user);
+  var baseUrl = req.protocol + '://' + req.get('host');
+  await userService.registerUser(user, baseUrl);
   //    metrics.increment("users.created");
   res.json({ status: "OK" }).end();
 }

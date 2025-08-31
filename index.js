@@ -95,9 +95,11 @@ process.on("unhandledRejection", (e) => {
 async function gracefulShutdown(signal) {
   log.info(`${signal} signal received. HTTP Server is shutting down...`);
   server.close(async () => {
+    log.info("Closing DB connections...");
     await pg.destroy();
+    log.info("Closing Redis connection...");
     await redis.quit();
-    log.info("DB connections are closed. Server gracefully shut down.");
+    log.info("Server gracefully shut down.");
     log.close();
   });
 }
