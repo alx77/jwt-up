@@ -8,7 +8,7 @@ const StatusError = require("../../exceptions/StatusError");
 const jwtHelper = require("../../utils/JwtHelper");
 const crypto = require("crypto");
 const { encode, decode } = require("../../utils/UuidBase64");
-const { exit } = require("process");
+const { transporter } = require("../../utils/EmailHelper");
 
 const AccountStatus = Object.freeze({
   ACTIVE: 1,
@@ -29,7 +29,7 @@ const AccountRole = Object.freeze({
 const ACTIVATION_CODE_PREFIX = "act_";
 
 class UserService {
-  async registerUser(user) {
+  async registerUser(user, baseUrl) {
     try {
       log.debug(`registering user ${user.email}`);
       const userData = await pg
@@ -71,6 +71,24 @@ class UserService {
         cfg.get("USER_ACTIVATION_DELAY"),
         userUuid
       );
+
+      //sending email
+      const activationUrl = baseUrl + "/api/auth/activate/" + encodeURIComponent(activationCode);
+      const mailOptions = {
+        from: cfg.get("EMAIL_SMTP_USER"),
+        to: user.email,
+        subject: 'Activation email',
+        text: 'Please click this link to activate your account: ' + activationUrl,
+        html: `<h1>Hi, ${user.name}!</h1><p>Please click this link to activate your account: <a href="${activationUrl}">${activationUrl}</a>.</p>`,
+      };
+
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          log.error('Error sending email to: ' + user.email, error);
+        } else {
+          log.info('Email was successfully sent to: ' + user.email + ' , with response: ' + info.response);
+        }
+      });
 
       // log.debug(`queuing user: ${userWithCodeStr}`);
       // await producer.connect();

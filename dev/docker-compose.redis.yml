@@ -1,4 +1,3 @@
-version: '3.3'
 services:
 
   redis:
@@ -9,12 +8,6 @@ services:
 #      - ./redis/data:/data
     ports:
       - 6379:6379
-    networks:
-      - redis
     healthcheck:
       test: ["CMD", "nc", "-vz", "localhost", "6379"]
       interval: 1s
-
-networks:
-  redis:
-    driver: bridge
