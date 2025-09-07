@@ -58,5 +58,5 @@ You can check activation emails after user registration with **MailPit**
 
 ## License
 [MIT](https://opensource.org/licenses/MIT)
-
+No warranties, use it at your own risk.
 Copyright (c) 2025, Alex Furmanov
