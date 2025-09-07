@@ -82,6 +82,9 @@ class UserService {
         html: `<h1>Hi, ${user.name}!</h1><p>Please click this link to activate your account: <a href="${activationUrl}">${activationUrl}</a>.</p>`,
       };
 
+      log.debug(
+        `sending mail to: ${user.email}, activationCode: ${activationCode}, user_id: ${user_id}`
+      );
       transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
           log.error('Error sending email to: ' + user.email, error);

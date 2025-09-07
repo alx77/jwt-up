@@ -17,6 +17,7 @@ const server = createServer(app);
 //const kafka = require("./src/utils/KafkaHelper");
 const { pg } = require("./src/utils/KnexHelper");
 const redis = require("./src/utils/RedisHelper");
+const { transporter } = require("./src/utils/EmailHelper");
 
 //app.disable("etag");
 //app.use(prometheusExpress({ includeMethod: true }));
@@ -99,8 +100,10 @@ async function gracefulShutdown(signal) {
     await pg.destroy();
     log.info("Closing Redis connection...");
     await redis.quit();
+    log.info("Closing SMTP connection...");
+    transporter.close();
     log.info("Server gracefully shut down.");
-    log.close();
+    log.end();
   });
 }
 process.on("SIGINT", gracefulShutdown);
