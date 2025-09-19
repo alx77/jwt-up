@@ -54,8 +54,13 @@ async function read(req, res) {
 }
 
 async function update(req, res) {
-  const user = { ...req.body, ...req.preprocessed.body };
-  const { user_id } = user;
+  //prettier-ignore
+  if (req.body.user_id != req.preprocessed.headers.authorization.user_id &&
+    !req.preprocessed.headers.authorization.roles.includes("admin")) {
+    throw new StatusError(401, "UNAUTHORIZED");
+  }
+
+  const user = req.body;
   const result = await userService.update(user);
   log.info(`User: ${result.email} updated`);
   //    metrics.increment("users.updated");

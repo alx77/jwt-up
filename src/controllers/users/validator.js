@@ -22,7 +22,7 @@ const password = Joi.string()
 
 const user_id = Joi.string().max(200).required().description("ID");
 const email = Joi.string().email().required().description("Email");
-const user = {
+const brief_user = {
   name: Joi.string()
     .regex(/^\w+(?:\s+\w+)*$/)
     .max(30)
@@ -30,6 +30,9 @@ const user = {
     .description("Username (nickname)"),
   login: Joi.string().alphanum().max(30).required(),
   email,
+}
+const user = {
+  ...brief_user,
   password,
   captcha_token: Joi.string().description(
     "Token to confirm user is real (recapcha)"
@@ -69,7 +72,7 @@ module.exports = {
       body: Joi.object()
         .keys({
           user_id,
-          ...user,
+          ...brief_user,
         })
         .required(),
       headers,
