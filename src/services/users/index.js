@@ -248,13 +248,12 @@ class UserService {
     const userData = await pg("account")
       .update({
         login: user.login,
-        passwd: bcrypt.hashSync(user.password, 10),
         email: user.email,
         name: user.name,
       })
-      .where("uid", decode(user.user_id));
+      .where("uid", decode(user.user_id))
+      .returning("login", "email", "name", "start_date", "status");
     if (!userData[0]) throw new Error("USER_NOT_FOUND");
-
     log.debug(`user updated: ${JSON.stringify(user)}`);
     return user;
   }
