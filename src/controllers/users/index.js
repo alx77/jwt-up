@@ -1,11 +1,12 @@
 const log = require("../../common/logger");
 //const metrics = require("../../common/metrics");
 const userService = require("../../services/users");
+const StatusError = require("../../exceptions/StatusError");
 
 async function register(req, res) {
   const user = req.body;
   //TODO check captcha `user.captcha_token`
-  var baseUrl = req.protocol + '://' + req.get('host');
+  var baseUrl = req.protocol + "://" + req.get("host");
   await userService.registerUser(user, baseUrl);
   //    metrics.increment("users.created");
   res.json({ status: "OK" }).end();
@@ -44,7 +45,8 @@ async function refreshToken(req, res) {
 }
 
 async function read(req, res) {
-  const user_id = req.params.user_id || req.preprocessed.headers.authorization.user_id;
+  const user_id =
+    req.params.user_id || req.preprocessed.headers.authorization.user_id;
   const user = await userService.get(user_id);
   log.info(`User: ${user.email} retrieved`);
   //    metrics.increment("users.read");
@@ -52,8 +54,13 @@ async function read(req, res) {
 }
 
 async function update(req, res) {
-  const user = { ...req.body, ...req.preprocessed.body };
-  const { user_id } = user;
+  //prettier-ignore
+  if (req.body.user_id != req.preprocessed.headers.authorization.user_id &&
+    !req.preprocessed.headers.authorization.roles.includes("admin")) {
+    throw new StatusError(401, "UNAUTHORIZED");
+  }
+
+  const user = req.body;
   const result = await userService.update(user);
   log.info(`User: ${result.email} updated`);
   //    metrics.increment("users.updated");
@@ -61,7 +68,13 @@ async function update(req, res) {
 }
 
 async function del(req, res) {
-  const { user_id } = req.preprocessed.params;
+  //prettier-ignore
+  if (req.params.user_id != req.preprocessed.headers.authorization.user_id &&
+    !req.preprocessed.headers.authorization.roles.includes("admin")) {
+    throw new StatusError(401, "UNAUTHORIZED");
+  }
+
+  const user_id = req.params.user_id;
   const result = await userService.delete(user_id);
   if (!result) throw new Error("USER_NOT_FOUND");
   log.info(`User: ${user_id} deleted`);
@@ -85,5 +98,3 @@ module.exports = {
 //revokeRole
 //changePassword
 //updateUser (changeName, changeEmail)
-//deleteUser (admin)
-
