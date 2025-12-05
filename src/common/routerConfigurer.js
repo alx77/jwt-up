@@ -17,6 +17,27 @@ function bindController(router, name, middleware) {
 
 function auth(roles) {
   return (req, res, next) => {
+    if (!req.headers.authorization) throw new StatusError(401, "UNAUTHORIZED");
+    const bearer = req.headers.authorization;
+    const token = bearer.split(" ")[1];
+    const context = req.headers["x-issuer-context"] ?? "default";
+    
+    try {
+      req.preprocessed = {
+        headers: {
+          authorization: jwtHelper.decodeTokenSync(token, context)
+        }
+      };
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        throw new StatusError(403, "TOKEN_EXPIRED");
+      }
+      if (err.name === "JsonWebTokenError") {
+        throw new StatusError(403, "TOKEN_MALFORMED");
+      }
+      throw err;
+    }
+
     const authorization = req.preprocessed.headers.authorization;
     if (!authorization) {
       throw new StatusError(401, "UNAUTHORIZED");
@@ -46,42 +67,6 @@ function validate(schema) {
     if (!!error) {
       throw error;
     }
-    return next();
-  };
-}
-
-const actions = {
-  //TODO get rid of preprocessor, make it work from function.js->auth: "jwt-decode"
-  "jwt-decode": (bearer, res) => {
-    if (!bearer) throw new Error("Bearer is empty");
-    const token = bearer.split(" ")[1];
-    try {
-      return jwtHelper.decodeTokenSync(token);
-    } catch (err) {
-      if (err.name === "TokenExpiredError") {
-        throw new StatusError(403, "TOKEN_EXPIRED");
-      }
-      throw err;
-    }
-  },
-};
-
-function preprocess(rules) {
-  return (req, res, next) => {
-    //TODO: error handling
-    req.preprocessed = undefined;
-    if (!rules) {
-      return next();
-    }
-    req.preprocessed = Object.entries(rules).reduce((acc, [section, rule]) => {
-      return Object.assign({}, acc, {
-        [section]: Object.keys(rule).reduce((acc, key) => {
-          const oldValue = req[section][key];
-          const newValue = actions[rule[key]](oldValue, res);
-          return Object.assign({}, acc, { [key]: newValue });
-        }, {}),
-      });
-    }, {});
     return next();
   };
 }
@@ -137,16 +122,6 @@ function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
         validationSchema,
         controllerName
       );
-  }
-
-  //preprocessor setup
-  if (bindings.preprocess) {
-    const preprocessors = require(path.join(cntrPath, "preprocessor.js"));
-    if (!preprocessors || !preprocessors[bindings.function])
-      throw new Error(
-        `Preprocessor for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
-      );
-    params.push(preprocess(preprocessors[bindings.function]));
   }
 
   //auth setup

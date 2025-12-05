@@ -9,7 +9,6 @@
       "description": "This method creates temporal users until they activate it by email",
       "method": "post",
       "route": "/auth/user",
-      "preprocess": false,
       "auth": false,
       "validate": true
     },
@@ -17,7 +16,6 @@
       "function": "activate",
       "method": "get",
       "route": "/auth/activate/:code",
-      "preprocess": false,
       "auth": false,
       "validate": true
     },
@@ -25,14 +23,12 @@
       "function": "login",
       "method": "post",
       "route": "/auth/login",
-      "preprocess": false,
       "validate": true
     },
     {
       "function": "refreshToken",
       "method": "get",
       "route": "/auth/refresh",
-      "preprocess": true,
       "auth": true,
       "validate": true
     },
@@ -41,7 +37,6 @@
       "summary": "Get own user",
       "method": "get",
       "route": "/auth/user",
-      "preprocess": true,
       "auth": ["registered", "admin", "manager", "operator"],
       "validate": true
     },
@@ -50,7 +45,6 @@
       "summary": "Get user by id",
       "method": "get",
       "route": "/auth/user/:user_id",
-      "preprocess": true,
       "auth": ["admin", "manager", "operator"],
       "validate": true
     },
@@ -58,7 +52,6 @@
       "function": "update",
       "method": "put",
       "route": "/auth/user",
-      "preprocess": true,
       "auth": ["registered", "admin", "manager", "operator"],
       "validate": true
     },
@@ -66,7 +59,6 @@
       "function": "del",
       "method": "delete",
       "route": "/auth/user/:user_id",
-      "preprocess": true,
       "auth": ["registered", "admin", "manager", "operator"],
       "validate": true
     }
