@@ -10,6 +10,27 @@
     "file": "error",
     "console": "debug"
   },
+  "issuers": [
+    {
+      "context": "default",
+      "contextType": "external",
+      "publicKeyFile": "ES256.pub.key",
+      "privateKeyFile": "ES256.priv.key",
+      "tokenIssuer": "https://ideaficus.com/oauth2/default",
+      "tokenExpiresSec": 600,
+      "refreshTokenExpiresSec": 10800
+    },
+    {
+      "context": "service-to-service",
+      "contextType": "internal",
+      "publicKeyFile": "ES256-service.pub.key",
+      "privateKeyFile": "ES256-service.priv.key",
+      "tokenIssuer": "https://ideaficus/oauth2/default",
+      "clientSecrets": ["service-secret-1"],
+      "tokenExpiresSec": 600,
+      "refreshTokenExpiresSec": 10800
+    }
+  ],
   "NODE_ENV": "development",
   "REDIS_HOST": "localhost",
   "REDIS_PORT": 6379,
@@ -23,11 +44,6 @@
   "KAFKA_ACTIVATION_TOPIC": "com.ideaficus.notifications",
   "KAFKA_CONSUMER_GROUP": "notifications-group",
   "USER_ACTIVATION_DELAY": 84600,
-  "PUBLIC_KEY_FILE": "ES256.pub.key",
-  "PRIVATE_KEY_FILE": "ES256.priv.key",
-  "TOKEN_EXPIRES_SEC": 600,
-  "REFRESH_TOKEN_EXPIRES_SEC": 10800,
-  "TOKEN_ISSUER": "https://ideaficus.com/oauth2/default",
   "EMAIL_SMTP_HOST": "localhost",
   "EMAIL_SMTP_PORT": 1025,
   "EMAIL_SMTP_USER": "noreply@ideaficus.com"

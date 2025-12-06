@@ -13,6 +13,9 @@ try {
 }
 
 nconf.set("host", hostname);
-nconf.argv().env();
+nconf.argv().env({
+  separator: "__",
+  parseValues: true,
+});
 
 module.exports = nconf;

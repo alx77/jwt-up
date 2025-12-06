@@ -4,89 +4,123 @@ const fs = require("fs");
 const crypto = require("crypto");
 const { encode } = require("./UuidBase64");
 
-
 class JwtHelper {
-  constructor(publicKeyFile, privateKeyFile, issuer) {
-    this.publicKey = fs.readFileSync(publicKeyFile, "utf8");
-    this.privateKey = fs.readFileSync(privateKeyFile, "utf8");
-    this.issuer = issuer;
+  constructor(issuersConfig) {
+    this.config = issuersConfig.reduce(
+      (
+        acc,
+        {
+          context,
+          publicKeyFile,
+          privateKeyFile,
+          tokenIssuer,
+          tokenExpiresSec,
+          refreshTokenExpiresSec,
+        }
+      ) => {
+        acc[context] = {
+          context,
+          publicKey: fs.readFileSync(publicKeyFile, "utf8"),
+          privateKey: fs.readFileSync(privateKeyFile, "utf8"),
+          issuer: tokenIssuer,
+          tokenExpiresSec: tokenExpiresSec,
+          refreshTokenExpiresSec: refreshTokenExpiresSec,
+        };
+        return acc;
+      },
+      {}
+    );
   }
 
   async getJwk() {
-    const jwk = await crypto
-      .createPublicKey(this.publicKey)
-      .export({ format: "jwk" });
-    return {
-      keys: [
-        {
+    const keyPromises = Object.values(this.config).map(
+      async ({ context, publicKey }) => {
+        const jwk = await crypto
+          .createPublicKey(publicKey)
+          .export({ format: "jwk" });
+
+        return {
           ...jwk,
           alg: "ES256",
           use: "sig",
-        },
-      ],
+          kid: await this.generateKidFromKey(publicKey, context),
+        };
+      }
+    );
+
+    var keys = await Promise.all(keyPromises);
+    return {
+      keys,
     };
   }
 
-  async getAccessToken(obj) {
+  async generateKidFromKey(publicKey, context) {
+    const hash = crypto
+      .createHash("sha256")
+      .update(publicKey)
+      .digest("hex")
+      .slice(0, 8);
+    return `key-${context}-${hash}`;
+  }
+
+  async getAccessToken(obj, context = "default") {
     return await new Promise((res, rej) =>
       jwt.sign(
         {
           ...{
-            iss: this.issuer,
+            iss: this.config[context].issuer,
             exp:
               Math.floor(Date.now() / 1000) +
-              Number.parseInt(cfg.get("TOKEN_EXPIRES_SEC")),
+              Number.parseInt(this.config[context].tokenExpiresSec),
           },
           sub: obj.user_id,
           jti: encode(crypto.randomUUID()),
           ...obj,
         },
-        this.privateKey,
+        this.config[context].privateKey,
         { algorithm: "ES256" },
         (err, token) => (err && rej(err)) || res(token)
       )
     );
   }
 
-  async getRefreshToken(obj) {
+  async getRefreshToken(obj, context = "default") {
     return await new Promise((res, rej) =>
       jwt.sign(
         {
           ...{
-            iss: this.issuer,
+            iss: this.config[context].issuer,
             exp:
               Math.floor(Date.now() / 1000) +
-              Number.parseInt(cfg.get("REFRESH_TOKEN_EXPIRES_SEC")),
+              Number.parseInt(this.config[context].refreshTokenExpiresSec),
           },
           sub: obj.user_id,
           jti: encode(crypto.randomUUID()),
-          ...obj
+          ...obj,
         },
-        this.privateKey,
+        this.config[context].privateKey,
         { algorithm: "ES256" },
         (err, token) => (err && rej(err)) || res(token)
       )
     );
   }
 
-  decodeTokenSync(token) {
-    return jwt.verify(token, this.publicKey, { iss: this.issuer });
+  decodeTokenSync(token, context = "default") {
+    return jwt.verify(token, this.config[context].publicKey, {
+      iss: this.config[context].issuer,
+    });
   }
 
-  async decodeToken(token) {
+  async decodeToken(token, context = "default") {
     return await new Promise((res, rej) =>
       jwt.verify(
         token,
-        this.publicKey,
-        { issuer: this.issuer },
+        this.config[context].publicKey,
+        { issuer: this.config[context].issuer },
         (err, decoded) => (err && rej(err)) || res(decoded)
       )
     );
   }
 }
 
-module.exports = new JwtHelper(
-  cfg.get("PUBLIC_KEY_FILE"),
-  cfg.get("PRIVATE_KEY_FILE"),
-  cfg.get("TOKEN_ISSUER")
-);
+module.exports = new JwtHelper(cfg.get("issuers"));

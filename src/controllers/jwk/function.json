@@ -7,7 +7,6 @@
       "function": "jwk",
       "method": "get",
       "route": "/jwk",
-      "preprocess": false,
       "validate": true
     }
   ]
