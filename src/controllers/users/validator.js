@@ -96,4 +96,8 @@ module.exports = {
         })
         .required(),
     }),
+  logout: Joi.object().unknown().keys({
+    params: Joi.object(),
+    headers,
+  })
 };

@@ -38,7 +38,8 @@ async function login(req, res) {
 
 async function refreshToken(req, res) {
   const user_id = req.preprocessed.headers.authorization.user_id;
-  const result = await userService.refreshToken(user_id);
+  const token = req.headers.authorization.split(" ")[1]
+  const result = await userService.refreshToken(user_id, token);
   log.info(`Token for user: ${user_id} is refreshed`);
   //    metrics.increment("users.refresh_token");
   res.json({ status: "OK", ...result }).end();
@@ -82,6 +83,16 @@ async function del(req, res) {
   res.json({ status: "OK" }).end();
 }
 
+async function logout(req, res) {
+  const ttl = req.preprocessed.headers.authorization.exp - Math.floor(Date.now() / 1000)
+  const token = req.headers.authorization.split(" ")[1]
+  await userService.logout(token, ttl);
+  log.info(`Token ${token} blacklisted`);
+
+  res.json({ status: "OK" }).end();
+}
+
+
 module.exports = {
   register,
   activate,
@@ -90,6 +101,7 @@ module.exports = {
   read,
   update,
   del,
+  logout
 };
 //TODO
 //logout
@@ -97,4 +109,3 @@ module.exports = {
 //assignRole
 //revokeRole
 //changePassword
-//updateUser (changeName, changeEmail)

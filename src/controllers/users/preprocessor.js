@@ -13,5 +13,8 @@ module.exports = {
   },
   refreshToken: {
     headers
+  },
+  logout: {
+    headers
   }
 };
