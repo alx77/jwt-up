@@ -184,8 +184,11 @@ class UserService {
     return { user_id, access_token, refresh_token };
   }
 
-  async refreshToken(user_id) {
+  async refreshToken(user_id, token) {
     //TODO check refresh token jti in redis blacklist (when logout)
+    const is_blacklisted = await redis.get(`blacklist_${token}`)
+    if (is_blacklisted) throw new StatusError(401, "UNAUTHORIZED")
+
     const uid = decode(user_id);
     const userData = await pg("account")
       .select([
@@ -267,7 +270,7 @@ class UserService {
 
     const user = userData[0];
     if (!user) throw new Error("USER_NOT_FOUND");
-    log.debug(`user deleted by id: ${id}, user: ${JSON.stringify(user)}`);
+    log.info(`user deleted by id: ${id}, user: ${JSON.stringify(user)}`);
     return {
       user_id: id,
       login: user.login,
@@ -276,6 +279,12 @@ class UserService {
       start_date: user.start_date,
       status: user.status,
     };
+  }
+
+  async logout(token, ttl) {
+    if (ttl <= 0) return
+    await redis.setex(`blacklist_${token}`, ttl, 1);
+    log.info(`token ${token} set as blacklisted in redis`)
   }
 }
 

@@ -61,6 +61,14 @@
       "route": "/auth/user/:user_id",
       "auth": ["registered", "admin", "manager", "operator"],
       "validate": true
+    },
+    {
+      "function": "logout",
+      "method": "get",
+      "route": "/auth/logout",
+      "preprocess": true,
+      "auth": true,
+      "validate": true
     }
   ]
 }
