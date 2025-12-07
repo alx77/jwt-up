@@ -1,16 +1,5 @@
 const Joi = require("joi");
 
-const headers = Joi.object()
-  .unknown()
-  .keys({
-    authorization: Joi.string()
-      .max(65535)
-      .regex(/^Bearer .+$/)
-      .required()
-      .description("JWT token"),
-  })
-  .required();
-
 const password = Joi.string()
   .regex(
     /^(?=(?:.*[A-Z]))(?=(?:.*[a-z]))(?=(?:.*[0-9]))(?=(?:.*[!@#$%^&*_:;<>])).{8,}$/
@@ -54,17 +43,12 @@ module.exports = {
         password,
       }),
     }),
-  refreshToken: Joi.object().unknown().keys({
-    params: Joi.object(),
-    headers,
-  }),
   read: Joi.object()
     .unknown()
     .keys({
       params: Joi.object().keys({
         user_id: user_id.optional(),
       }),
-      headers,
     }),
   update: Joi.object()
     .unknown()
@@ -74,8 +58,7 @@ module.exports = {
           user_id,
           ...brief_user,
         })
-        .required(),
-      headers,
+        .required()
     }),
   del: Joi.object()
     .unknown()
@@ -84,8 +67,7 @@ module.exports = {
         .keys({
           user_id,
         })
-        .required(),
-      headers,
+        .required()
     }),
   activate: Joi.object()
     .unknown()
@@ -95,9 +77,5 @@ module.exports = {
           code: Joi.string().required(),
         })
         .required(),
-    }),
-  logout: Joi.object().unknown().keys({
-    params: Joi.object(),
-    headers,
-  })
+    })
 };

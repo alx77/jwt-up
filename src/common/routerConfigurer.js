@@ -3,6 +3,7 @@ const fs = require("fs");
 const j2s = require("joi-to-swagger");
 const jwtHelper = require("../utils/JwtHelper");
 const StatusError = require("../exceptions/StatusError");
+const Joi = require("joi");
 
 function bindController(router, name, middleware) {
   if (!name) throw new Error("HTTP method not specified");
@@ -21,12 +22,12 @@ function auth(roles) {
     const bearer = req.headers.authorization;
     const token = bearer.split(" ")[1];
     const context = req.headers["x-issuer-context"] ?? "default";
-    
+
     try {
       req.preprocessed = {
         headers: {
-          authorization: jwtHelper.decodeTokenSync(token, context)
-        }
+          authorization: jwtHelper.decodeTokenSync(token, context),
+        },
       };
     } catch (err) {
       if (err.name === "TokenExpiredError") {
@@ -105,16 +106,21 @@ function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
   const params = [bindings.route];
 
   //validator setup
+  let validationSchema = undefined;
+
   if (bindings.validate) {
-    const validationSchema = require(path.join(cntrPath, "validator.js"))[
-      bindings.function
-    ];
+    const validatorPath = path.join(cntrPath, "validator.js");
+    if (fs.existsSync(validatorPath))
+      validationSchema = require(validatorPath)[bindings.function];
+
     if (!validationSchema)
       throw new Error(
-        `Validator for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
+        `Validation schema for function '${bindings.function}' for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
       );
     params.push(validate(validationSchema));
+  }
 
+  if (!bindings.hide)
     swaggerBuilder &&
       setupSwaggerSections(
         swaggerBuilder,
@@ -122,7 +128,6 @@ function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
         validationSchema,
         controllerName
       );
-  }
 
   //auth setup
   bindings.auth && params.push(auth(bindings.auth));
@@ -146,14 +151,27 @@ function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
   return params;
 }
 
-//TODO make it work without validationSchema
 function setupSwaggerSections(
   swaggerBuilder,
   binding,
   validationSchema,
   controllerName
 ) {
-  const { function: fn, summary, description, method, route, auth } = binding;
+  const {
+    function: fn,
+    summary,
+    description,
+    method,
+    route,
+    auth,
+    responses,
+  } = binding;
+
+  validationSchema =
+    validationSchema ||
+    Joi.object().unknown().keys({
+      params: Joi.object(),
+    });
 
   var keys = validationSchema.describe().keys;
   keys &&
@@ -168,30 +186,7 @@ function setupSwaggerSections(
         summary,
         description,
         operationId: fn,
-        //TODO make map with codes and specify extra codes for specific endpoints
-        responses: {
-          200: {
-            description: "OK",
-          },
-          201: {
-            description: "Created",
-          },
-          401: {
-            description: "Unauthorized",
-          },
-          403: {
-            description: "Forbidden",
-          },
-          404: {
-            description: "Not Found",
-          },
-          405: {
-            description: "Invalid input",
-          },
-          409: {
-            description: "Conflict",
-          },
-        },
+        responses: applyResponses(responses),
       };
       if (["post", "put", "patch"].includes(method))
         Object.assign(rule, {
@@ -258,4 +253,32 @@ function setupSwaggerSections(
 
       swaggerBuilder.addPath(swaggerRoute, method, rule);
     });
+}
+
+function applyResponses(responses) {
+  const codes = {
+    200: {
+      description: "OK",
+    },
+    201: {
+      description: "Created",
+    },
+    400: {
+      description: "Bad Request",
+    },
+    401: {
+      description: "Unauthorized",
+    },
+    403: {
+      description: "Forbidden",
+    },
+    409: {
+      description: "Conflict",
+    },
+  };
+  return structuredClone(responses || [])
+    .concat(400)
+    .reduce((acc, response) => {
+      return Object.assign({}, acc, { [response]: codes[response] });
+    }, {});
 }

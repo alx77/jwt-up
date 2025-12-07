@@ -6,9 +6,9 @@
       "function": "exec",
       "method": "get",
       "route": "/health",
-      "preprocess": false,
       "auth": false,
-      "validate": false
+      "validate": false,
+      "hide": true
     }
   ]
 }
