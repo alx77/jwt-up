@@ -107,7 +107,8 @@ class JwtHelper {
 
   decodeTokenSync(token, context = "default") {
     return jwt.verify(token, this.config[context].publicKey, {
-      iss: this.config[context].issuer,
+      algorithms: ["ES256"],
+      issuer: this.config[context].issuer
     });
   }
 
@@ -116,7 +117,10 @@ class JwtHelper {
       jwt.verify(
         token,
         this.config[context].publicKey,
-        { issuer: this.config[context].issuer },
+        {
+          algorithms: ["ES256"], 
+          issuer: this.config[context].issuer
+        },
         (err, decoded) => (err && rej(err)) || res(decoded)
       )
     );

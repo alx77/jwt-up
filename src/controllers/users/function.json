@@ -10,27 +10,31 @@
       "method": "post",
       "route": "/auth/user",
       "auth": false,
-      "validate": true
+      "validate": true,
+      "responses": [201, 409]
     },
     {
       "function": "activate",
       "method": "get",
       "route": "/auth/activate/:code",
       "auth": false,
-      "validate": true
+      "validate": true,
+      "responses": [200]
     },
     {
       "function": "login",
       "method": "post",
       "route": "/auth/login",
-      "validate": true
+      "preprocess": false,
+      "validate": true,
+      "responses": [200]
     },
     {
       "function": "refreshToken",
       "method": "get",
       "route": "/auth/refresh",
       "auth": true,
-      "validate": true
+      "responses": [200, 401, 403]
     },
     {
       "function": "read",
@@ -38,7 +42,8 @@
       "method": "get",
       "route": "/auth/user",
       "auth": ["registered", "admin", "manager", "operator"],
-      "validate": true
+      "validate": true,
+      "responses": [200, 401, 403]
     },
     {
       "function": "read",
@@ -46,29 +51,31 @@
       "method": "get",
       "route": "/auth/user/:user_id",
       "auth": ["admin", "manager", "operator"],
-      "validate": true
+      "validate": true,
+      "responses": [200, 401, 403]
     },
     {
       "function": "update",
       "method": "put",
       "route": "/auth/user",
       "auth": ["registered", "admin", "manager", "operator"],
-      "validate": true
+      "validate": true,
+      "responses": [200, 401, 403]
     },
     {
       "function": "del",
       "method": "delete",
       "route": "/auth/user/:user_id",
       "auth": ["registered", "admin", "manager", "operator"],
-      "validate": true
+      "validate": true,
+      "responses": [200, 401, 403]
     },
     {
       "function": "logout",
       "method": "get",
       "route": "/auth/logout",
-      "preprocess": true,
       "auth": true,
-      "validate": true
+      "responses": [200, 401, 403]
     }
   ]
 }

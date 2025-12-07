@@ -7,7 +7,7 @@
       "function": "jwk",
       "method": "get",
       "route": "/jwk",
-      "validate": true
+      "responses": [200]
     }
   ]
 }
