@@ -5,6 +5,7 @@
   "author": "Alex Furmanov",
   "license": "MIT",
   "main": "index.js",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/alx77/jwt-up.git"
@@ -12,10 +13,9 @@
   "scripts": {
     "start": "node index.js",
     "watch": "nodemon index.js",
-    "test": "mocha 'test/**/*.test.js' --exit --bail",
-    "test:g": "mocha 'test/**/*.test.js' --exit --grep",
-    "test:i": "dev/test-runner.sh start && mocha 'test/**/*.it.js' --exit --bail && dev/test-runner.sh",
-    "test:i:g": "dev/test-runner.sh start && mocha 'test/**/*.it.js' --exit --grep && dev/test-runner.sh",
+    "test": "vitest run .test.js",
+    "test:i": "(dev/test-runner.sh start && INTEGRATION_TEST=true vitest run .it.js); dev/test-runner.sh stop",
+    "test:coverage": "vitest run --coverage .test.js",
     "startenv": "dev/test-runner.sh start",
     "stopenv": "dev/test-runner.sh stop"
   },
@@ -29,8 +29,8 @@
     "delay": "2500"
   },
   "dependencies": {
+    "argon2": "^0.44.0",
     "axios": "^1.8.4",
-    "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "express": "^5.1.0",
     "express-prom-bundle": "^8.0.0",
@@ -45,8 +45,8 @@
     "kafkajs": "^2.2.4",
     "kafkajs-snappy": "^1.1.0",
     "knex": "^3.1.0",
+    "luxon": "^3.7.2",
     "mime": "^4.0.7",
-    "moment": "^2.30.1",
     "nconf": "^0.12.1",
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.9",
@@ -58,14 +58,19 @@
     "typescript": "^5.8.3",
     "url": "latest",
     "uuid": "latest",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "zod": "^4.3.2",
+    "zod-openapi": "^5.4.5"
   },
   "devDependencies": {
     "@tsconfig/node23": "^23.0.1",
     "@types/express": "^5.0.1",
     "@types/morgan": "^1.9.9",
-    "chai": "5.2.0",
-    "mocha": "11.1.0",
-    "rewire": "7.0.0"
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
+    "child_process": "^1.0.2",
+    "rewire": "7.0.0",
+    "vitest": "^4.0.15",
+    "wait-on": "^9.0.3"
   }
 }

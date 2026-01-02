@@ -1,9 +1,8 @@
-const chai = require("chai");
-const expect = chai.expect;
-const jwtHelper = require("../../src/utils/JwtHelper");
+import { describe, it, expect } from "vitest";
+import jwtHelper from "@/utils/JwtHelper";
 
-describe(`@JwtHelper tests`, function () {
-  it("@JwtHelper.1 - Check encode/decode", async () => {
+describe(`@utils - JwtHelper tests`, function () {
+  it("Check encode/decode", async () => {
     const obj = {
       ver: 1,
       aud: "api://default",
@@ -16,17 +15,15 @@ describe(`@JwtHelper tests`, function () {
 
     const encoded = await jwtHelper.getAccessToken(obj);
     const decoded = await jwtHelper.decodeToken(encoded);
-    delete decoded.exp;
-    delete decoded.iat;
-    delete decoded.iss;
-    expect(obj).deep.equal(decoded);
+    
+    const { exp, iat, iss, jti, ...cleanDecoded } = decoded;
+    expect(cleanDecoded).toEqual(obj);
 
     const decodedSync = jwtHelper.decodeTokenSync(encoded);
-    delete decodedSync.exp;
-    delete decodedSync.iat;
-    delete decodedSync.iss;
-    expect(obj).deep.equal(decodedSync);
+    const { exp: expSync, iat: iatSync, iss: issSync, jti: jtiSync, ...cleanDecodedSync } = decodedSync;
+    expect(cleanDecodedSync).toEqual(obj);
 
     const jwk = await jwtHelper.getJwk();
+    expect(jwk).toBeDefined();
   });
 });

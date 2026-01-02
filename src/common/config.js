@@ -1,10 +1,12 @@
-const path = require("path");
-const fs = require("fs");
-const nconf = require("nconf");
-var os = require("os");
-var hostname = os.hostname();
+import path from "path";
+import fs from "fs";
+import nconf from "nconf";
+import os from "os";
 
-const configFile = path.join(__dirname, "../../config.json");
+const hostname = os.hostname();
+
+const configFile = path.join(process.cwd(), "config.json");
+
 try {
   fs.accessSync(configFile, fs.constants.R_OK);
   nconf.file(configFile);
@@ -18,4 +20,4 @@ nconf.argv().env({
   parseValues: true,
 });
 
-module.exports = nconf;
+export default nconf;

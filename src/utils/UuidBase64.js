@@ -1,4 +1,4 @@
-exports.encode = function encode(uuid) {
+export function encode(uuid) {
   const hex = uuid.replace(/-/g, "");
   const bytes = new Uint8Array(16);
   for (let i = 0; i < 16; i++) {
@@ -8,9 +8,9 @@ exports.encode = function encode(uuid) {
   // Convert to Base64 and remove the trailing '=='
   const base64 = btoa(String.fromCharCode.apply(null, bytes));
   return base64.substring(0, base64.length - 2);
-};
+}
 
-exports.decode = function decode(shortUuid) {
+export function decode(shortUuid) {
   const repaired = shortUuid.trim().substring(0, 22) + "==";
   const binaryString = atob(repaired);
   const bytes = new Uint8Array(binaryString.length);
@@ -27,4 +27,9 @@ exports.decode = function decode(shortUuid) {
   const hexHigh = high.toString(16).padStart(16, "0");
   const hexLow = low.toString(16).padStart(16, "0");
   return `${hexHigh.substring(0, 8)}-${hexHigh.substring(8, 12)}-${hexHigh.substring(12, 16)}-${hexLow.substring(0, 4)}-${hexLow.substring(4, 16)}`;
+}
+
+export default {
+  encode,
+  decode
 };

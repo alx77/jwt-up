@@ -1,6 +1,6 @@
-const log = require("../../common/logger");
-//const metrics = require("../../common/metrics");
-const tokenService = require("../../services/tokens");
+import log from "../../common/logger.js";
+//import metrics from "../../common/metrics.js";
+import tokenService from "../../services/tokens/index.js";
 
 async function jwk(req, res) {
   const jwk = await tokenService.getJwk();
@@ -10,6 +10,4 @@ async function jwk(req, res) {
   res.json(jwk).end();
 }
 
-module.exports = {
-  jwk,
-};
+export default { jwk };

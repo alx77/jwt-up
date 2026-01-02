@@ -1,10 +1,10 @@
-const jwtHelper = require("../../utils/JwtHelper");
+import jwtHelper from "../../utils/JwtHelper.js";
 
 class TokenService {
-
   async getJwk() {
     return await jwtHelper.getJwk();
   }
 }
 
-module.exports = new TokenService();
+const tokenService = new TokenService();
+export default tokenService;

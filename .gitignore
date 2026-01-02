@@ -6,3 +6,4 @@ dev/*/data
 *.key
 *.key.pub
 dist
+coverage

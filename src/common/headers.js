@@ -1,23 +1,48 @@
-const cfg = require("./config");
+import cfg from "./config.js";
 
-//prettier-ignore
-module.exports.setHeaders = function (req, res) {
-    let cors = cfg.get("cors");
-    if (cors.enabled) {
-        // Website you wish to allow to connect
-        res.setHeader("Access-Control-Allow-Origin", !cors.allowAny ? req.headers.origin : ((!req.secure && req.headers.origin) ? req.headers.origin : (cors.origin ? cors.origin : "*")));
-
-        // Request methods you wish to allow
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE, FETCH");
-
-        // Request headers you wish to allow
-        res.setHeader("Access-Control-Allow-Headers",
-            "Origin, X-Requested-With, X-HTTP-Method-Override, Content-Type, Authorization, Content-Disposition, Accept");
-
-        // Set to true if you need the website to include cookies in the requests sent
-        // to the API (e.g. in case you use sessions)
-        res.setHeader("Access-Control-Allow-Credentials", true);
-
-        res.setHeader("Last-Modified", (new Date()).toUTCString());
+export function corsMiddleware(req, res, next) {
+    const cors = cfg.get("cors");
+    
+    if (!cors?.enabled) {
+        return next();
     }
+
+    let allowOrigin = "*";
+    
+    if (!cors.allowAny) {
+        allowOrigin = req.headers.origin || "*";
+    } else {
+        if (!req.secure && req.headers.origin) {
+            allowOrigin = req.headers.origin;
+        } else if (cors.origin) {
+            allowOrigin = cors.origin;
+        }
+    }
+    
+    res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, OPTIONS, PUT, PATCH, DELETE, FETCH"
+    );
+    res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, X-HTTP-Method-Override, Content-Type, Authorization, Content-Disposition, Accept"
+    );
+    res.setHeader("Access-Control-Allow-Credentials", true);
+    res.setHeader("Last-Modified", new Date().toUTCString());
+    
+    if (req.method === "OPTIONS") {
+        res.status(200).end();
+        return;
+    }
+    
+    next();
+}
+
+export function securityMiddleware(req, res, next) {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
 }

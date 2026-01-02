@@ -1,22 +1,21 @@
-const { pg } = require("../../utils/KnexHelper");
-const log = require("../../common/logger");
-const cfg = require("../../common/config");
-const redis = require("../../utils/RedisHelper");
-const bcrypt = require("bcryptjs");
-//const moment = require("moment");
-const StatusError = require("../../exceptions/StatusError");
-const jwtHelper = require("../../utils/JwtHelper");
-const crypto = require("crypto");
-const { encode, decode } = require("../../utils/UuidBase64");
-const { transporter } = require("../../utils/EmailHelper");
+import { pg } from "../../utils/KnexHelper.js";
+import log from "../../common/logger.js";
+import cfg from "../../common/config.js";
+import redis from "../../utils/RedisHelper.js";
+import { hashPassword, verifyPassword } from "../../utils/CryptoHelper.js";
+import StatusError from "../../exceptions/StatusError.js";
+import jwtHelper from "../../utils/JwtHelper.js";
+import crypto from "crypto";
+import { encode, decode } from "../../utils/UuidBase64.js";
+import { transporter } from "../../utils/EmailHelper.js";
 
-const AccountStatus = Object.freeze({
+export const AccountStatus = Object.freeze({
   ACTIVE: 1,
   BLOCKED: 2,
   TEMPORARY_BLOCKED: 3,
 });
 
-const AccountRole = Object.freeze({
+export const AccountRole = Object.freeze({
   GUEST: 1,
   ADMIN: 2,
   MANAGER: 3,
@@ -31,15 +30,17 @@ const ACTIVATION_CODE_PREFIX = "act_";
 class UserService {
   async registerUser(user, baseUrl) {
     try {
+      log.debug(`hashing password for user ${user.email}`);
+      const encodedPassword = await hashPassword(user.password);
       log.debug(`registering user ${user.email}`);
       const userData = await pg
         .with("new_user", (q) => {
           q.insert({
             login: user.login,
-            passwd: bcrypt.hashSync(user.password, 10),
+            passwd: encodedPassword,
             email: user.email,
             name: user.name,
-            start_date: new Date(), //moment().utc().format("YYYY-MM-DD HH:mm:ss.SSS")
+            start_date: new Date(),
             status: AccountStatus.BLOCKED,
           })
             .into("account")
@@ -157,6 +158,8 @@ class UserService {
   }
 
   async login(email, password) {
+    const start = performance.now();
+    
     const userData = await pg("account")
       .select([
         "account.uid",
@@ -170,8 +173,12 @@ class UserService {
       ])
       .where({ email, status: AccountStatus.ACTIVE });
     const user = userData[0];
+    log.info(`DB extract in ${(performance.now() - start).toFixed(2)}ms`);
+    
     if (!user) throw new Error("USER_NOT_FOUND");
-    const matches = bcrypt.compareSync(password, user.passwd);
+    const matches = await verifyPassword(password, user.passwd);
+    log.info(`Check password in ${(performance.now() - start).toFixed(2)}ms`);
+    
     if (!matches) throw new StatusError(401, "UNAUTHORIZED");
     //generate token
     const user_id = encode(user.uid);
@@ -180,12 +187,16 @@ class UserService {
       email,
       roles: user.roles,
     });
+    log.info(`AC generated in ${(performance.now() - start).toFixed(2)}ms`);
+    
     const refresh_token = await this.generateRefreshToken({ user_id });
+    log.info(`RT generated in ${(performance.now() - start).toFixed(2)}ms`);
+    
     return { user_id, access_token, refresh_token };
   }
 
   async refreshToken(user_id, token) {
-    //TODO check refresh token jti in redis blacklist (when logout)
+    //TODO check refresh token jti in redis blacklist (when logout), and this check should be moved to the middleware
     const is_blacklisted = await redis.get(`blacklist_${token}`)
     if (is_blacklisted) throw new StatusError(401, "UNAUTHORIZED")
 
@@ -288,4 +299,4 @@ class UserService {
   }
 }
 
-module.exports = new UserService();
+export default new UserService();

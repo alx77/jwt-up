@@ -1,6 +1,6 @@
-const cfg = require("../common/config");
-const { Kafka, CompressionTypes, CompressionCodecs } = require("kafkajs");
-const SnappyCodec = require("kafkajs-snappy");
+import cfg from "../common/config.js";
+import { Kafka, CompressionTypes, CompressionCodecs } from "kafkajs";
+import SnappyCodec from "kafkajs-snappy";
 
 CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec;
 
@@ -25,7 +25,7 @@ if (cfg.get("KAFKA_SSL_ENABLED"))
 
 const kafka = new Kafka(kafkaConfig);
 
-module.exports = {
+export default {
   producer: kafka.producer(),
   consumer: kafka.consumer({ groupId: cfg.get("KAFKA_CONSUMER_GROUP") }),
   CompressionTypes,
