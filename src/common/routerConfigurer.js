@@ -1,9 +1,15 @@
-const path = require("path");
-const fs = require("fs");
-const j2s = require("joi-to-swagger");
-const jwtHelper = require("../utils/JwtHelper");
-const StatusError = require("../exceptions/StatusError");
-const Joi = require("joi");
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import j2s from "joi-to-swagger";
+import jwtHelper from "../utils/JwtHelper.js";
+import StatusError from "../exceptions/StatusError.js";
+import Joi from "joi";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function bindController(router, name, middleware) {
   if (!name) throw new Error("HTTP method not specified");
@@ -44,9 +50,10 @@ function auth(roles) {
       throw new StatusError(401, "UNAUTHORIZED");
     } else if (
       !(
-        (roles === true && !authorization.roles) ||
+        (roles === true && !!authorization.roles) ||
+        (roles === true && authorization?.aud === "refresh") ||
         (roles !== true &&
-          authorization.roles &&
+          !!authorization.roles &&
           authorization.roles.some((it) => roles.includes(it)))
       )
     ) {
@@ -72,9 +79,10 @@ function validate(schema) {
   };
 }
 
-module.exports.configure = function (router, swaggerBuilder) {
+export async function configure(router, swaggerBuilder) {
   const controllersPath = path.join(__dirname, "../controllers");
-  fs.readdirSync(controllersPath).forEach((controllerName) => {
+  const controllerDirs = fs.readdirSync(controllersPath);
+  await Promise.all(controllerDirs.map(async (controllerName) => {
     const cntrPath = path.join(controllersPath, controllerName);
     const configPath = path.join(cntrPath, "function.json");
     if (!fs.existsSync(configPath)) return;
@@ -85,34 +93,38 @@ module.exports.configure = function (router, swaggerBuilder) {
         description: config.description,
       });
 
-    config.enabled &&
-      config.bindings.forEach((b) => {
+    if (config.enabled) {
+      await Promise.all(config.bindings.map(async (b) => {
         if (!b.function || !b.route || !b.method)
           throw new Error(
-            `'function.json' for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' misconfigured`
+            `'function.json' for controller: '${controllerName}', route: '${b.route}', method: '${b.method}' misconfigured`
           );
-        const middleware = prepareMiddleware(
+        const middleware = await prepareMiddleware(
           controllerName,
           cntrPath,
           b,
           swaggerBuilder
         );
         bindController(router, b.method, middleware);
-      });
-  });
-};
+      }));
+    }
+  }));
+}
 
-function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
+async function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
   const params = [bindings.route];
 
   //validator setup
-  let validationSchema = undefined;
+  let validationSchema;
 
   if (bindings.validate) {
     const validatorPath = path.join(cntrPath, "validator.js");
-    if (fs.existsSync(validatorPath))
-      validationSchema = require(validatorPath)[bindings.function];
-
+    if (fs.existsSync(validatorPath)) {
+      const validatorModule = await import(`file://${validatorPath}`);
+      if (typeof validatorModule.default === "object" && validatorModule.default[bindings.function]) {
+        validationSchema = validatorModule.default[bindings.function];
+      }
+    }
     if (!validationSchema)
       throw new Error(
         `Validation schema for function '${bindings.function}' for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
@@ -132,8 +144,12 @@ function prepareMiddleware(controllerName, cntrPath, bindings, swaggerBuilder) {
   //auth setup
   bindings.auth && params.push(auth(bindings.auth));
 
-  let func = require(cntrPath)[bindings.function];
-  if (!func) {
+  const module = await import(`file://${cntrPath}/index.js`);
+  let func;
+  if (typeof module.default === "object" && module.default[bindings.function]) {
+    // export default { jwk, otherFunc }
+    func = module.default[bindings.function];
+  } else {
     throw new Error(
       `Function '${bindings.function}' for controller: '${controllerName}', route: '${bindings.route}', method: '${bindings.method}' does not exist`
     );
@@ -176,7 +192,7 @@ function setupSwaggerSections(
   var keys = validationSchema.describe().keys;
   keys &&
     Object.keys(keys).forEach((key) => {
-      schema = validationSchema.extract(key);
+      const schema = validationSchema.extract(key);
       if ("headers" == key) return;
       const { swagger } = j2s(schema);
       const schemaName = fn + "_" + key;

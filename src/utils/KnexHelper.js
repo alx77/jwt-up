@@ -1,7 +1,8 @@
-const cfg = require("../common/config");
-const log = require("../common/logger");
+import knex from 'knex';
+import cfg from '../common/config.js';
+import log from '../common/logger.js';
 
-const pg = require("knex")({
+const pg = knex({
   client: "pg",
   connection: cfg.get("POSTGRES_CONN"),
   pool: { min: 0, max: cfg.get("POSTGRES_POOL_MAX") },
@@ -9,4 +10,4 @@ const pg = require("knex")({
 
 pg.on("query-error", (err) => log.error("Knex error:", err));
 
-module.exports = { pg };
+export { pg };

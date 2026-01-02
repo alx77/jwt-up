@@ -1,6 +1,6 @@
-const cfg = require("./config");
+import cfg from "./config.js";
 
-module.exports = class SwaggerBuilder {
+export default class SwaggerBuilder {
   constructor() {
     this.info;
     this.tags = [];
@@ -13,6 +13,7 @@ module.exports = class SwaggerBuilder {
     const host = cfg.get("host");
     const port = cfg.get("port");
     const url = `http://${host}:${port}/api`;
+    
     return Object.assign(
       { openapi: "3.0.1", servers: [{ url }] },
       (this.info && { info: this.info }) || {},
@@ -56,4 +57,4 @@ module.exports = class SwaggerBuilder {
     this.schemas = { ...this.schemas, ...schemas };
     return this;
   }
-};
+}

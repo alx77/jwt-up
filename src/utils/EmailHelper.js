@@ -1,5 +1,5 @@
-const cfg = require("../common/config");
-const nodemailer = require("nodemailer");
+import cfg from "../common/config.js";
+import nodemailer from "nodemailer";
 
 const auth = cfg.get("EMAIL_USE_AUTH")
   ? {
@@ -15,4 +15,4 @@ const transporter = nodemailer.createTransport({
   auth,
 });
 
-module.exports = { transporter };
+export { transporter };

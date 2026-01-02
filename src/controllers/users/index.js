@@ -1,7 +1,8 @@
-const log = require("../../common/logger");
-//const metrics = require("../../common/metrics");
-const userService = require("../../services/users");
-const StatusError = require("../../exceptions/StatusError");
+import log from "../../common/logger.js";
+
+//import metrics from "../../common/metrics";
+import userService from "../../services/users/index.js";
+import StatusError from "../../exceptions/StatusError.js";
 
 async function register(req, res) {
   const user = req.body;
@@ -92,8 +93,7 @@ async function logout(req, res) {
   res.json({ status: "OK" }).end();
 }
 
-
-module.exports = {
+export default {
   register,
   activate,
   login,

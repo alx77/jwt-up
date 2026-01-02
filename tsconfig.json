@@ -1,10 +1,10 @@
 {
     "extends": "@tsconfig/node23/tsconfig.json",
-    "include": ["src/**/*"],
+    "include": ["src/**/*.ts", "test/**/*.test.ts"],
     "exclude": ["node_modules"],
     "compilerOptions":
     {
-        "allowJs": false,
+//        "allowJs": false,
 //        "checkJs": true,
         "outDir": "dist"
     }

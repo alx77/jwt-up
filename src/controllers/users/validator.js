@@ -1,4 +1,4 @@
-const Joi = require("joi");
+import Joi from "joi";
 
 const password = Joi.string()
   .regex(
@@ -10,14 +10,15 @@ const password = Joi.string()
   );
 
 const user_id = Joi.string().max(200).required().description("ID");
-const email = Joi.string().email().required().description("Email");
+const email = Joi.string().email().required().trim().description("Email");
 const brief_user = {
   name: Joi.string()
     .regex(/^\w+(?:\s+\w+)*$/)
     .max(30)
+    .trim()
     .optional()
     .description("Username (nickname)"),
-  login: Joi.string().alphanum().max(30).required(),
+  login: Joi.string().alphanum().max(30).trim().required(),
   email,
 }
 const user = {
@@ -29,7 +30,7 @@ const user = {
   ip: Joi.string().ip({ version: ["ipv4", "ipv6"], cidr: "forbidden" }),
 };
 
-module.exports = {
+export default {
   register: Joi.object()
     .unknown()
     .keys({

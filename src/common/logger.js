@@ -1,8 +1,9 @@
-const cfg = require("./config");
-const winston = require("winston");
+import cfg from "./config.js";
+import winston from "winston";
+
 const { combine, errors, timestamp, colorize } = winston.format;
 const colorizer = colorize();
-const loglevel = cfg.get("loglevel");
+const loglevel = cfg.get("loglevel") || {};
 
 const consoleFormatter = msg => {
   const message = `${msg.level[0].toUpperCase()}: ${msg.timestamp} ${msg.stack || msg.message}`; //prettier-ignore
@@ -25,4 +26,4 @@ const transports = [
 
 const logger = winston.createLogger({ transports });
 
-module.exports = logger;
+export default logger;

@@ -29,7 +29,7 @@ CREATE TABLE public.account (
 	id bigint NOT NULL DEFAULT nextval('public.account_id_seq'::regclass),
 	uid uuid DEFAULT gen_random_uuid(),
 	login character varying(255) NOT NULL,
-	passwd character varying(64) NOT NULL,
+	passwd character varying(255) NOT NULL,
 	email character varying(255) DEFAULT NULL,
 	name character varying(255) DEFAULT NULL,
 	start_date timestamptz,
