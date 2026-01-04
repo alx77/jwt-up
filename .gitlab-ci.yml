@@ -26,8 +26,6 @@ install-dependencies:
   stage: install
   image: node:25-alpine
   script:
-    - apk update && apk add --no-cache openssl git python3 make g++
-    - ./dev/genES256.sh
     - npm config set cache $NPM_CONFIG_CACHE
     - npm ci --cache .npm --prefer-offline
   artifacts:
@@ -51,6 +49,8 @@ test-unit:
   dependencies:
     - install-dependencies
   script:
+    - apk update && apk add --no-cache openssl
+    - ./dev/genES256.sh
     - npm config set cache $NPM_CONFIG_CACHE
     - ls -la node_modules/ || echo "Node modules not found, installing..."
     - |
@@ -79,6 +79,7 @@ test-integration:
     COMPOSE_DOCKER_CLI_BUILD: 1
   script:
     - apk add --no-cache docker-compose nodejs npm openssl bash curl
+    - ./dev/genES256.sh
     - docker --version
     - docker-compose --version    
     - npm config set cache $NPM_CONFIG_CACHE
