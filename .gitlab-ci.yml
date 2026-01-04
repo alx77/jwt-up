@@ -86,7 +86,7 @@ test-integration:
         find .docker-cache -name "*.tar" -exec docker load -i {} \;
       fi
   script:
-    - apk add --no-cache docker-compose openssl net-tools
+    - apk add --no-cache docker-compose openssl net-tools bash
     - ./dev/genES256.sh
     - docker --version
     - docker-compose --version
