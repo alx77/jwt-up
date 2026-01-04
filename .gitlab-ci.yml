@@ -1,21 +1,90 @@
 variables:
-#  DOCKER_DRIVER: overlay2
   SERVICE_NAME: "jwt-up"
 #  BUILD_VERSION: "$CI_COMMIT_SHA"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
 
 #services:
 #  - docker:27-dind
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .npm/
 
 stages:
+  - install
   - test
 
-test:
+default:
+  before_script:
+    - mkdir -p $NPM_CONFIG_CACHE
+    - npm config set cache $NPM_CONFIG_CACHE
+
+install-dependencies:
+  stage: install
+  image: node:25-alpine
+  script:
+    - apk update && apk add --no-cache openssl git python3 make g++
+    - ./dev/genES256.sh
+    - npm ci --cache .npm --prefer-offline
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .npm/
+    policy: push
+  only:
+    changes:
+      - package.json
+      - package-lock.json
+
+test-unit:
   stage: test
   image: node:25-alpine
-  allow_failure: false
+  dependencies:
+    - install-dependencies
   script:
-    - apk update && apk add --no-cache openssl
-    - ./dev/genES256.sh
-    - npm i
     - npm run test
-#    - npm run test:i
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .npm/
+    policy: pull
+
+test-integration:
+  stage: test
+  image: docker:27-cli
+  services:
+    - docker:27-dind
+  dependencies:
+    - install-dependencies
+  variables:
+    DOCKER_BUILDKIT: 1
+    COMPOSE_DOCKER_CLI_BUILD: 1
+  script:
+    - apk add --no-cache docker-compose nodejs npm openssl bash curl
+    - docker --version
+    - docker-compose --version    
+    - ls -la node_modules/ || echo "Node modules not found, installing..."
+    - |
+      if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
+        echo "Installing dependencies..."
+        npm ci --cache .npm --prefer-offline
+      fi
+    
+    - npm run test:i
+    
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .npm/
+    policy: pull
