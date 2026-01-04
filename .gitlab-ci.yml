@@ -1,0 +1,22 @@
+variables:
+#  DOCKER_DRIVER: overlay2
+  SERVICE_NAME: "jwt-up"
+#  BUILD_VERSION: "$CI_COMMIT_SHA"
+
+#services:
+#  - docker:27-dind
+
+stages:
+  - build
+
+test:
+  stage: build
+  image: node:25-alpine
+  allow_failure: false
+  script:
+    - apk update && apk add --no-cache openssh-keygen
+    - ./dev/genES256.sh
+    - npm run test
+#    - npm run test:i
+  only:
+    - tags
