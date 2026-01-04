@@ -14,7 +14,7 @@
     "start": "node index.js",
     "watch": "nodemon index.js",
     "test": "vitest run .test.js",
-    "test:i": "(dev/test-runner.sh start && INTEGRATION_TEST=true vitest run .it.js); dev/test-runner.sh stop",
+    "test:i": "dev/test-runner.sh start; INTEGRATION_TEST=true vitest run .it.js; EXIT_CODE=$?; dev/test-runner.sh stop; exit $EXIT_CODE",
     "test:coverage": "vitest run --coverage .test.js",
     "startenv": "dev/test-runner.sh start",
     "stopenv": "dev/test-runner.sh stop"
