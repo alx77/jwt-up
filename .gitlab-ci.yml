@@ -76,7 +76,7 @@ test-integration:
   dependencies:
     - install-dependencies
   variables:
-    DOCKER_HOST: tcp://docker:2375
+    DOCKER_HOST: tcp://docker:2376
 #    DOCKER_BUILDKIT: 1
 #    COMPOSE_DOCKER_CLI_BUILD: 1
   before_script:
