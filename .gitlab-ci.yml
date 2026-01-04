@@ -16,5 +16,6 @@ test:
   script:
     - apk update && apk add --no-cache openssl
     - ./dev/genES256.sh
+    - npm i
     - npm run test
 #    - npm run test:i
