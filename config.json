@@ -33,7 +33,7 @@
   ],
   "NODE_ENV": "development",
   "REDIS_HOST": "localhost",
-  "REDIS_PORT": 6379,
+  "REDIS_PORT": 26379,
   "POSTGRES_CONN": "postgres://postgres:secret@localhost:25432/portal",
   "POSTGRES_POOL_MAX": 10,
   "KAFKA_HOST": "localhost:9092",

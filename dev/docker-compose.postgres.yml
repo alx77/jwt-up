@@ -2,6 +2,8 @@ services:
 
   postgres:
     image: postgres:17-alpine
+    networks:
+      - jwtup-network
     container_name: postgres-jwtup
     restart: always
     volumes:
@@ -18,3 +20,6 @@ services:
     healthcheck:
       test: ["CMD", "nc", "-vz", "localhost", "5432"]
       interval: 1s
+networks:
+  jwtup-network:
+    driver: bridge

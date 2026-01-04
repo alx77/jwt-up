@@ -1,0 +1,19 @@
+services:
+
+  app:
+    build: ..
+    networks:
+      - jwtup-network
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - POSTGRES_CONN=postgres://postgres:secret@postgres:5432/portal
+      - EMAIL_SMTP_HOST=mailpit
+    ports:
+      - 28088:8088
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "localhost", "8088"]
+      interval: 1s
+networks:
+  jwtup-network:
+    driver: bridge
