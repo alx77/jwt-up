@@ -1,14 +1,19 @@
 variables:
   SERVICE_NAME: "jwt-up"
+  DOCKER_DRIVER: overlay2
 #  BUILD_VERSION: "$CI_COMMIT_SHA"
   DOCKER_TLS_CERTDIR: "/certs"
   NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+  DOCKER_IMAGE_CACHE_KEY: ${CI_COMMIT_REF_SLUG}-docker
 
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - node_modules/
-    - .npm/
+  - key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .npm/
+  - key: "${DOCKER_IMAGE_CACHE_KEY}"
+    paths:
+      - .docker-cache/
 
 stages:
   - install
@@ -65,18 +70,23 @@ test-unit:
 
 test-integration:
   stage: test
-  image: docker:27-cli
+  image: node:25-alpine
   services:
     - docker:27-dind
   dependencies:
     - install-dependencies
   variables:
     DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
 #    DOCKER_BUILDKIT: 1
 #    COMPOSE_DOCKER_CLI_BUILD: 1
+  before_script:
+    - |
+      if [ -d ".docker-cache" ]; then
+        echo "Restoring Docker image cache..."
+        find .docker-cache -name "*.tar" -exec docker load -i {} \;
+      fi
   script:
-    - apk add --no-cache docker-compose nodejs npm openssl bash curl net-tools
+    - apk add --no-cache docker-compose openssl net-tools
     - ./dev/genES256.sh
     - docker --version
     - docker-compose --version
@@ -91,10 +101,19 @@ test-integration:
     - netstat -tulpn
 
     - npm run test:i
-    
+  after_script:
+    - |
+      mkdir -p .docker-cache
+      docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>" | while read img; do
+        filename=$(echo $img | sed 's/[^a-zA-Z0-9]/_/g').tar
+        docker save $img -o ".docker-cache/$filename"
+      done
   cache:
-    key: ${CI_COMMIT_REF_SLUG}
-    paths:
-      - node_modules/
-      - .npm/
-    policy: pull
+    - key: ${CI_COMMIT_REF_SLUG}
+      paths:
+        - node_modules/
+        - .npm/
+      policy: pull
+    - key: "${DOCKER_IMAGE_CACHE_KEY}"
+      paths:
+        - .docker-cache/
