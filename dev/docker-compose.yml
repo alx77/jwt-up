@@ -2,7 +2,6 @@ services:
 
   app:
     build: ..
-    command: npm run test:it
     networks:
       - jwtup-network
     environment:

@@ -97,7 +97,7 @@ test-integration:
       fi
 
     - npm run startenv
-    - docker compose -f dev/docker-compose.yml up --force-recreate
+    - docker compose -f dev/docker-compose.yml run --rm --force-recreate app npm run test:it
 
   after_script:
     - docker compose -f dev/docker-compose.yml down --remove-orphans
