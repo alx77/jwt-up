@@ -78,6 +78,9 @@ test-integration:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
     DOCKER_TLS_VERIFY: ""
+    REDIS_HOST: redis-jwtup
+    POSTGRES_CONN: "postgres://postgres:secret@postgres-jwt-up:25432/portal"
+    
 #    DOCKER_BUILDKIT: 1
 #    COMPOSE_DOCKER_CLI_BUILD: 1
   before_script:
