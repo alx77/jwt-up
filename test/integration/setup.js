@@ -12,8 +12,8 @@ beforeAll(async () => {
 
     console.log("⏳ Waiting for Redis...");
     await waitOn({
-      resources: ["tcp:localhost:6379"],
-      timeout: 30000,
+      resources: ["tcp:localhost:26379"],
+      timeout: 40000,
       interval: 1000,
     });
 
