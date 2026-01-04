@@ -5,7 +5,7 @@ services:
     ports:
       - 2181:2181
     networks:
-      - kafka
+      - jwtup-network
     healthcheck:
       test: ["CMD", "echo ruok | nc -w 2 -q 2 localhost 2181 | grep imok"]
 #      test: ["CMD", "nc", "-vz", "localhost", "2181"]
@@ -31,7 +31,7 @@ services:
     - /var/run/docker.sock:/var/run/docker.sock
     # - ./kafka/kafka_server_jaas.conf:/etc/kafka/kafka_server_jaas.conf
     networks:
-      - kafka
+      - jwtup-network
     healthcheck:
       test: ["CMD", "zookeeper-shell.sh zookeeper:2181 <<< \"ls /brokers/ids\" | tail -1 | jq '.[]' | grep 1001"]
 #      test: ["CMD", "echo ruok | nc -w 2 -q 2 zookeeper 2181 | grep imok"]
@@ -39,5 +39,5 @@ services:
       interval: 1s
 
 networks:
-  kafka:
+  jwtup-network:
     driver: bridge

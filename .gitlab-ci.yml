@@ -78,11 +78,6 @@ test-integration:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
     DOCKER_TLS_VERIFY: ""
-    REDIS_HOST: redis-jwtup
-    POSTGRES_CONN: "postgres://postgres:secret@postgres-jwt-up:25432/portal"
-    
-#    DOCKER_BUILDKIT: 1
-#    COMPOSE_DOCKER_CLI_BUILD: 1
   before_script:
     - |
       if [ -d ".docker-cache" ]; then
@@ -90,7 +85,7 @@ test-integration:
         find .docker-cache -name "*.tar" -exec docker load -i {} \;
       fi
   script:
-    - apk add --no-cache docker-compose openssl net-tools bash
+    - apk add --no-cache docker-compose openssl bash
     - ./dev/genES256.sh
     - docker --version
     - docker-compose --version
@@ -101,11 +96,13 @@ test-integration:
         npm ci --cache .npm --prefer-offline
       fi
 
-    - npm run startenv    
-    - netstat -tulpn
+    - npm run startenv
+    - docker compose -f dev/docker-compose.yml up --force-recreate --detach
 
-    - npm run test:i
+    - npm run test:it
   after_script:
+    - docker compose -f dev/docker-compose.yml down --remove-orphans
+    - npm run stopenv
     - |
       mkdir -p .docker-cache
       docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>" | while read img; do
