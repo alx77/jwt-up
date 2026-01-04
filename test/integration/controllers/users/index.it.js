@@ -169,7 +169,6 @@ describe("@users tests", () => {
       email: user.email,
       name: user.name,
     });
-    expect(true).toBe(false)
   });
 
   afterEach(async () => {

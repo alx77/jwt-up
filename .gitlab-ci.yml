@@ -100,7 +100,6 @@ test-integration:
     - docker compose -f dev/docker-compose.yml run --rm app npm run test:it
 
   after_script:
-    - docker compose -f dev/docker-compose.yml down --remove-orphans
     - npm run stopenv
     - |
       mkdir -p .docker-cache
