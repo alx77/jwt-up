@@ -1,7 +1,7 @@
 variables:
   SERVICE_NAME: "jwt-up"
 #  BUILD_VERSION: "$CI_COMMIT_SHA"
-  DOCKER_HOST: tcp://docker:2375
+#  DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
   NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
