@@ -7,10 +7,10 @@ variables:
 #  - docker:27-dind
 
 stages:
-  - build
+  - test
 
 test:
-  stage: build
+  stage: test
   image: node:25-alpine
   allow_failure: false
   script:
@@ -18,5 +18,3 @@ test:
     - ./dev/genES256.sh
     - npm run test
 #    - npm run test:i
-  only:
-    - tags
