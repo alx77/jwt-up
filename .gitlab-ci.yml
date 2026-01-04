@@ -21,7 +21,6 @@ stages:
 default:
   before_script:
     - mkdir -p $NPM_CONFIG_CACHE
-    - npm config set cache $NPM_CONFIG_CACHE
 
 install-dependencies:
   stage: install
@@ -29,6 +28,7 @@ install-dependencies:
   script:
     - apk update && apk add --no-cache openssl git python3 make g++
     - ./dev/genES256.sh
+    - npm config set cache $NPM_CONFIG_CACHE
     - npm ci --cache .npm --prefer-offline
   artifacts:
     paths:
@@ -51,6 +51,14 @@ test-unit:
   dependencies:
     - install-dependencies
   script:
+    - npm config set cache $NPM_CONFIG_CACHE
+    - ls -la node_modules/ || echo "Node modules not found, installing..."
+    - |
+      if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
+        echo "Installing dependencies..."
+        npm ci --cache .npm --prefer-offline
+      fi
+
     - npm run test
   cache:
     key: ${CI_COMMIT_REF_SLUG}
@@ -73,6 +81,7 @@ test-integration:
     - apk add --no-cache docker-compose nodejs npm openssl bash curl
     - docker --version
     - docker-compose --version    
+    - npm config set cache $NPM_CONFIG_CACHE
     - ls -la node_modules/ || echo "Node modules not found, installing..."
     - |
       if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
