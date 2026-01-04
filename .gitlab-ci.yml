@@ -14,7 +14,7 @@ test:
   image: node:25-alpine
   allow_failure: false
   script:
-    - apk update && apk add --no-cache openssh-keygen
+    - apk update && apk add --no-cache openssl
     - ./dev/genES256.sh
     - npm run test
 #    - npm run test:i
