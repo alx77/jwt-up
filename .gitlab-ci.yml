@@ -1,0 +1,118 @@
+variables:
+  SERVICE_NAME: "jwt-up"
+  DOCKER_DRIVER: overlay2
+#  BUILD_VERSION: "$CI_COMMIT_SHA"
+  NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+  DOCKER_IMAGE_CACHE_KEY: ${CI_COMMIT_REF_SLUG}-docker
+
+cache:
+  - key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .npm/
+  - key: "${DOCKER_IMAGE_CACHE_KEY}"
+    paths:
+      - .docker-cache/
+
+stages:
+  - install
+  - test
+
+default:
+  before_script:
+    - mkdir -p $NPM_CONFIG_CACHE
+
+install-dependencies:
+  stage: install
+  image: node:25-alpine
+  script:
+    - npm config set cache $NPM_CONFIG_CACHE
+    - npm ci --cache .npm --prefer-offline
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .npm/
+    policy: push
+  only:
+    changes:
+      - package.json
+      - package-lock.json
+
+test-unit:
+  stage: test
+  image: node:25-alpine
+  dependencies:
+    - install-dependencies
+  script:
+    - apk update && apk add --no-cache openssl
+    - ./dev/genES256.sh
+    - npm config set cache $NPM_CONFIG_CACHE
+    - ls -la node_modules/ || echo "Node modules not found, installing..."
+    - |
+      if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
+        echo "Installing dependencies..."
+        npm ci --cache .npm --prefer-offline
+      fi
+
+    - npm run test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .npm/
+    policy: pull
+
+test-integration:
+  stage: test
+  image: node:25-alpine
+  services:
+    - docker:27-dind
+  dependencies:
+    - install-dependencies
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_TLS_VERIFY: ""
+  before_script:
+    - |
+      if [ -d ".docker-cache" ]; then
+        echo "Restoring Docker image cache..."
+        find .docker-cache -name "*.tar" -exec docker load -i {} \;
+      fi
+  script:
+    - apk add --no-cache docker-compose openssl bash
+    - ./dev/genES256.sh
+    - docker --version
+    - docker-compose --version
+    - npm config set cache $NPM_CONFIG_CACHE
+    - |
+      if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
+        echo "Installing dependencies..."
+        npm ci --cache .npm --prefer-offline
+      fi
+
+    - npm run startenv
+    - docker compose -f dev/docker-compose.yml run --rm app npm run test:it
+
+  after_script:
+    - npm run stopenv
+    - |
+      mkdir -p .docker-cache
+      docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>" | while read img; do
+        filename=$(echo $img | sed 's/[^a-zA-Z0-9]/_/g').tar
+        docker save $img -o ".docker-cache/$filename"
+      done
+  cache:
+    - key: ${CI_COMMIT_REF_SLUG}
+      paths:
+        - node_modules/
+        - .npm/
+      policy: pull
+    - key: "${DOCKER_IMAGE_CACHE_KEY}"
+      paths:
+        - .docker-cache/
