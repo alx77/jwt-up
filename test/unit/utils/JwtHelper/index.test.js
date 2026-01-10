@@ -1,18 +1,20 @@
 import { describe, it, expect } from "vitest";
 import jwtHelper from "@/utils/JwtHelper";
+import { ref } from "joi";
 
 describe(`@utils - JwtHelper tests`, function () {
-  it("Check encode/decode", async () => {
-    const obj = {
-      ver: 1,
-      aud: "api://default",
-      cid: "0oa4lqm29K4tBnwVq0x6",
-      uid: "00u4gg8e8n3mzdL6P0x6",
-      scp: ["groups", "openid", "profile", "email"],
-      sub: "jwt-up@ugolok.com",
-      groups: ["test users", "Everyone"],
-    };
 
+  const obj = {
+    ver: 1,
+    cid: "0oa4lqm29K4tBnwVq0x6",
+    uid: "00u4gg8e8n3mzdL6P0x6",
+    scp: ["groups", "openid", "profile", "email"],
+    sub: "jwt-up@ugolok.com",
+    groups: ["test users", "Everyone"],
+  };
+
+  it("Check encode/decode", async () => {
+  
     const encoded = await jwtHelper.getAccessToken(obj);
     const decoded = await jwtHelper.decodeToken(encoded);
     
@@ -26,4 +28,15 @@ describe(`@utils - JwtHelper tests`, function () {
     const jwk = await jwtHelper.getJwk();
     expect(jwk).toBeDefined();
   });
+
+  it("Check Refresh Token", async () => {
+  
+    const refresh = await jwtHelper.getRefreshToken(obj);
+    const decodedRefresh = await jwtHelper.decodeToken(refresh);
+    expect(decodedRefresh.aud).toEqual("refresh")
+    
+    const {iss, exp, iat, jti, aud, ...cleanDecodedRefresh} = decodedRefresh
+    expect(cleanDecodedRefresh).toEqual(obj)
+
+  })
 });

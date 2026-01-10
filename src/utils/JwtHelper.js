@@ -96,8 +96,8 @@ class JwtHelper {
           },
           sub: obj.user_id,
           jti: encode(crypto.randomUUID()),
-          aud: "refresh",
           ...obj,
+          aud: "refresh"
         },
         this.config[context].privateKey,
         { algorithm: "ES256" },
