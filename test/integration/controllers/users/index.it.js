@@ -20,7 +20,6 @@ import { pg } from "@/utils/KnexHelper.js";
 import { encode, decode } from "@/utils/UuidBase64.js";
 import request from "supertest";
 import { app, server } from "../../../../index.js";
-import { email } from "zod";
 
 const ACTIVATION_CODE_PREFIX = "act_";
 
