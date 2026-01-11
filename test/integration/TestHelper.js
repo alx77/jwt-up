@@ -62,7 +62,7 @@ export async function getUser(userUuid, activationCodeWithPrefix) {
   if (activationCodeWithPrefix) {
     redisUserId = await redis.get(activationCodeWithPrefix);
   }
-  return { user_id: userData.rows[0]?.uid, redisUserId };
+  return { user_id: userData.rows[0]?.uid, redisUserId, userData: userData.rows[0] };
 }
 export async function getAccessToken(userUuid) {
   const userData = await pg.raw(

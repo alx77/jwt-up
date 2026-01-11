@@ -17,7 +17,7 @@ import { AccountStatus, AccountRole } from "@/services/users/index.js";
 import redis from "@/utils/RedisHelper.js";
 import { transporter } from "@/utils/EmailHelper.js";
 import { pg } from "@/utils/KnexHelper.js";
-
+import { encode, decode } from "@/utils/UuidBase64.js";
 import request from "supertest";
 import { app, server } from "../../../../index.js";
 
@@ -171,6 +171,41 @@ describe("@users tests", () => {
     });
   });
 
+  it("Updating user", async () => {
+    //Arrange
+    let activationCode;
+    ({ userUuid, activationCode } = await addUser({
+      ...user,
+      status: AccountStatus.ACTIVE,
+      roles: [AccountRole.REGISTERED],
+    }));
+    activationCodeWithPrefix = ACTIVATION_CODE_PREFIX + activationCode;
+
+    const accessToken = await getAccessToken(userUuid);
+
+    //Act & Assert
+    const response = await request(app)
+      .put("/api/auth/user")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        user_id: encode(userUuid),
+        login: "jess",
+        name: "Jessica",
+        email: "jess@example.com",
+      })
+      .expect(200);
+
+    expect(response.body.user).toMatchObject({
+      login: "jess",
+      name: "Jessica",
+      email: "jess@example.com",
+    });
+
+    const { user_id, userData } = await getUser(userUuid);
+    expect(user_id).toBe(userUuid);
+    expect(userData.name).toBe("Jessica");
+  });
+
   afterEach(async () => {
     if (userUuid || activationCodeWithPrefix) {
       await removeUser(userUuid, activationCodeWithPrefix);
@@ -192,7 +227,6 @@ describe("@users tests", () => {
   });
 });
 //TODO
-// - update user
 // - delete user
 // - logout user
 // - test for invalid activation code
