@@ -85,7 +85,7 @@ describe("@users tests", () => {
     it("should handle duplicate user error", async () => {
       const duplicateError = new Error("Duplicate key");
       duplicateError.code = "23505";
-      duplicateError.constraint = "login_idx";
+      duplicateError.constraint = "account_login_uq";
 
       mockPg._setMockResult(duplicateError);
 

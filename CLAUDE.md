@@ -136,11 +136,11 @@ Omitting `auth` means the endpoint is public.
 
 Override any key via env var: `CONFIG_KEY__SUBKEY=value`
 
-Dev services: Postgres `:25432`, Redis `:26379`, MailPit `:1025` / `:8025`
+Dev services: Postgres `:35432`, Redis `:26379`, MailPit `:1025` / `:8025`
 
 ## Database
 
-Shared DB with **portal** (`portal` database):
+Own database `auth` (separate from **portal**):
 - `account` — users (uid UUID, login, passwd, email, name, status)
 - `role` — roles (guest=1, admin=2, manager=3, operator=4, registered=5)
 - `acl` — account ↔ role mapping with permissions
@@ -152,7 +152,7 @@ User IDs are stored as UUID but exposed as 22-char Base64 (`UuidBase64.ts`) — 
 
 - **dashboard** → calls jwt-up for all auth (login, logout, refresh, profile)
 - **portal** → verifies JWT tokens via `/api/jwk` endpoint, does not issue tokens
-- Shared PostgreSQL `account` table between jwt-up and portal
+- jwt-up uses its own `auth` database (not shared with portal)
 
 ## Key conventions
 

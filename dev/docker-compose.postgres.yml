@@ -12,7 +12,7 @@ services:
       - ./postgres/create.sql:/create.sql
       - ./postgres/data.sql:/data.sql
     ports:
-      - 25432:5432
+      - 35432:5432
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres

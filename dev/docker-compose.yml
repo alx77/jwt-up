@@ -7,7 +7,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - POSTGRES_CONN=postgres://postgres:secret@postgres:5432/portal
+      - POSTGRES_CONN=postgres://postgres:secret@postgres:5432/auth
       - EMAIL_SMTP_HOST=mailpit
     ports:
       - 28088:8088
