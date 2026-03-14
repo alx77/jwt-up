@@ -74,9 +74,10 @@ export async function getAccessToken(userUuid) {
   const roles = userData?.rows[0]?.roles || [];
   const user_id = encode(userUuid);
 
-  return await jwtHelper.getAccessToken({
-    user_id,
-    email,
-    roles,
-  });
+  return await jwtHelper.getAccessToken({ user_id, email, roles });
+}
+
+export async function getRefreshToken(userUuid) {
+  const user_id = encode(userUuid);
+  return await jwtHelper.getRefreshToken({ user_id });
 }

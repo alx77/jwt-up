@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 class RedisMock {
   constructor(config = {}) {
@@ -8,7 +8,7 @@ class RedisMock {
     this._streams = new Map();
     this._pubsub = new Map();
     this._subscribers = new Map();
-    
+
     this.get = vi.fn(this._get.bind(this));
     this.set = vi.fn(this._set.bind(this));
     this.setex = vi.fn(this._setex.bind(this));
@@ -24,38 +24,38 @@ class RedisMock {
     this.hdel = vi.fn(this._hdel.bind(this));
     this.keys = vi.fn(this._keys.bind(this));
     this.flushall = vi.fn(this._flushall.bind(this));
-    
+
     // Pipeline support
     this.pipeline = vi.fn(() => new PipelineMock(this));
-    
+
     // Pub/Sub
     this.publish = vi.fn(this._publish.bind(this));
     this.subscribe = vi.fn(this._subscribe.bind(this));
     this.on = vi.fn(this._on.bind(this));
-    
+
     // Streams
     this.xadd = vi.fn(this._xadd.bind(this));
     this.xread = vi.fn(this._xread.bind(this));
-    
+
     // Transactions
     this.multi = vi.fn(() => new MultiMock(this));
-    
+
     // Connection
     this.connect = vi.fn().mockResolvedValue(this);
     this.disconnect = vi.fn().mockResolvedValue();
-    this.quit = vi.fn().mockResolvedValue('OK');
-    
+    this.quit = vi.fn().mockResolvedValue("OK");
+
     // Events
     this._listeners = { connect: [], error: [], ready: [] };
-    
+
     // Test utilities
     this._callLog = [];
     this._mockResponses = new Map();
   }
 
   async _get(key) {
-    this._logCall('get', [key]);
-    
+    this._logCall("get", [key]);
+
     if (this._expirations.has(key)) {
       const expiry = this._expirations.get(key);
       if (Date.now() > expiry) {
@@ -64,41 +64,41 @@ class RedisMock {
         return null;
       }
     }
-    
+
     const value = this._data.get(key);
     return value !== undefined ? value : null;
   }
 
   async _set(key, value, ...args) {
-    this._logCall('set', [key, value, ...args]);
-    
+    this._logCall("set", [key, value, ...args]);
+
     let ttl = null;
     if (args.length >= 2) {
       const [mode, time] = args;
-      if (mode === 'EX') {
+      if (mode === "EX") {
         ttl = time * 1000;
-      } else if (mode === 'PX') {
+      } else if (mode === "PX") {
         ttl = time;
       }
     }
-    
+
     this._data.set(key, value);
     if (ttl) {
       this._expirations.set(key, Date.now() + ttl);
     } else {
       this._expirations.delete(key);
     }
-    
-    return 'OK';
+
+    return "OK";
   }
 
   async _setex(key, seconds, value) {
-    return this._set(key, value, 'EX', seconds);
+    return this._set(key, value, "EX", seconds);
   }
 
   async _del(...keys) {
-    this._logCall('del', keys);
-    
+    this._logCall("del", keys);
+
     let deleted = 0;
     for (const key of keys) {
       if (this._data.has(key)) {
@@ -111,8 +111,8 @@ class RedisMock {
   }
 
   async _exists(...keys) {
-    this._logCall('exists', keys);
-    
+    this._logCall("exists", keys);
+
     let count = 0;
     for (const key of keys) {
       if (this._data.has(key)) {
@@ -131,53 +131,53 @@ class RedisMock {
   }
 
   async _expire(key, seconds) {
-    this._logCall('expire', [key, seconds]);
-    
+    this._logCall("expire", [key, seconds]);
+
     if (!this._data.has(key)) return 0;
-    
-    this._expirations.set(key, Date.now() + (seconds * 1000));
+
+    this._expirations.set(key, Date.now() + seconds * 1000);
     return 1;
   }
 
   async _ttl(key) {
-    this._logCall('ttl', [key]);
-    
+    this._logCall("ttl", [key]);
+
     if (!this._expirations.has(key)) return -1;
-    
+
     const expiry = this._expirations.get(key);
     const now = Date.now();
-    
+
     if (now > expiry) {
       this._data.delete(key);
       this._expirations.delete(key);
       return -2;
     }
-    
+
     return Math.floor((expiry - now) / 1000);
   }
 
   // ===== HASH METHODS =====
   async _hget(key, field) {
-    this._logCall('hget', [key, field]);
-    
+    this._logCall("hget", [key, field]);
+
     const hash = this._data.get(key);
-    if (!hash || typeof hash !== 'object') return null;
-    
+    if (!hash || typeof hash !== "object") return null;
+
     return hash[field] !== undefined ? hash[field] : null;
   }
 
   async _hset(key, field, value, ...more) {
-    this._logCall('hset', [key, field, value, ...more]);
-    
-    if (!this._data.has(key) || typeof this._data.get(key) !== 'object') {
+    this._logCall("hset", [key, field, value, ...more]);
+
+    if (!this._data.has(key) || typeof this._data.get(key) !== "object") {
       this._data.set(key, {});
     }
-    
+
     const hash = this._data.get(key);
     let created = 0;
-    
+
     // hset(key, obj)
-    if (typeof field === 'object') {
+    if (typeof field === "object") {
       Object.assign(hash, field);
       created = Object.keys(field).length;
     } else {
@@ -190,23 +190,23 @@ class RedisMock {
         }
       }
     }
-    
+
     return created;
   }
 
   async _hgetall(key) {
-    this._logCall('hgetall', [key]);
-    
+    this._logCall("hgetall", [key]);
+
     const hash = this._data.get(key);
-    return hash && typeof hash === 'object' ? hash : null;
+    return hash && typeof hash === "object" ? hash : null;
   }
 
   async _hdel(key, ...fields) {
-    this._logCall('hdel', [key, ...fields]);
-    
+    this._logCall("hdel", [key, ...fields]);
+
     const hash = this._data.get(key);
-    if (!hash || typeof hash !== 'object') return 0;
-    
+    if (!hash || typeof hash !== "object") return 0;
+
     let deleted = 0;
     for (const field of fields) {
       if (hash[field] !== undefined) {
@@ -214,80 +214,80 @@ class RedisMock {
         deleted++;
       }
     }
-    
+
     if (Object.keys(hash).length === 0) {
       this._data.delete(key);
     }
-    
+
     return deleted;
   }
 
   // ===== KEYS =====
   async _keys(pattern) {
-    this._logCall('keys', [pattern]);
-    
+    this._logCall("keys", [pattern]);
+
     const regex = this._patternToRegex(pattern);
     const keys = [];
-    
+
     for (const key of this._data.keys()) {
       if (regex.test(key)) {
         keys.push(key);
       }
     }
-    
+
     return keys;
   }
 
   // ===== INCR/DECR =====
   async _incr(key) {
-    this._logCall('incr', [key]);
-    
-    const current = parseInt(this._data.get(key) || '0', 10);
+    this._logCall("incr", [key]);
+
+    const current = parseInt(this._data.get(key) || "0", 10);
     const newValue = current + 1;
     this._data.set(key, newValue.toString());
-    
+
     return newValue;
   }
 
   async _decr(key) {
-    this._logCall('decr', [key]);
-    
-    const current = parseInt(this._data.get(key) || '0', 10);
+    this._logCall("decr", [key]);
+
+    const current = parseInt(this._data.get(key) || "0", 10);
     const newValue = current - 1;
     this._data.set(key, newValue.toString());
-    
+
     return newValue;
   }
 
   // ===== PUB/SUB =====
   async _publish(channel, message) {
-    this._logCall('publish', [channel, message]);
-    
+    this._logCall("publish", [channel, message]);
+
     const subscribers = this._subscribers.get(channel) || [];
     let count = 0;
-    
+
     for (const subscriber of subscribers) {
       subscriber(channel, message);
       count++;
     }
-    
+
     return count;
   }
 
   async _subscribe(channel, callback) {
-    this._logCall('subscribe', [channel]);
-    
+    this._logCall("subscribe", [channel]);
+
     if (!this._subscribers.has(channel)) {
       this._subscribers.set(channel, []);
     }
-    
+
     this._subscribers.get(channel).push(callback);
-    return 'OK';
+    return "OK";
   }
 
   _on(event, listener) {
-    this._logCall('on', [event]);
-    
+    this._logCall("on", [event]);
+
     if (!this._listeners[event]) {
       this._listeners[event] = [];
     }
@@ -297,57 +297,57 @@ class RedisMock {
 
   // ===== STREAMS =====
   async _xadd(stream, id, ...fields) {
-    this._logCall('xadd', [stream, id, ...fields]);
-    
+    this._logCall("xadd", [stream, id, ...fields]);
+
     if (!this._streams.has(stream)) {
       this._streams.set(stream, []);
     }
-    
-    const entry = { id: id === '*' ? Date.now().toString() : id };
+
+    const entry = { id: id === "*" ? Date.now().toString() : id };
     for (let i = 0; i < fields.length; i += 2) {
       entry[fields[i]] = fields[i + 1];
     }
-    
+
     this._streams.get(stream).push(entry);
     return entry.id;
   }
 
   async _xread(count, block, streams) {
-    this._logCall('xread', [count, block, streams]);
-    
+    this._logCall("xread", [count, block, streams]);
+
     const result = [];
-    
+
     for (const [stream, lastId] of Object.entries(streams)) {
       const streamData = this._streams.get(stream) || [];
-      const entries = streamData.filter(entry => entry.id > lastId);
-      
+      const entries = streamData.filter((entry) => entry.id > lastId);
+
       if (entries.length > 0) {
         result.push([stream, entries]);
       }
     }
-    
+
     return result.length > 0 ? result : null;
   }
 
   // ===== UTILITIES =====
   async _flushall() {
-    this._logCall('flushall', []);
-    
+    this._logCall("flushall", []);
+
     this._data.clear();
     this._expirations.clear();
     this._streams.clear();
     this._pubsub.clear();
     this._subscribers.clear();
-    
-    return 'OK';
+
+    return "OK";
   }
 
   _patternToRegex(pattern) {
     const regexStr = pattern
-      .replace(/\*/g, '.*')
-      .replace(/\?/g, '.')
-      .replace(/\[([^\]]+)\]/g, '[$1]');
-    
+      .replace(/\*/g, ".*")
+      .replace(/\?/g, ".")
+      .replace(/\[([^\]]+)\]/g, "[$1]");
+
     return new RegExp(`^${regexStr}$`);
   }
 
@@ -355,7 +355,7 @@ class RedisMock {
     this._callLog.push({
       method,
       args,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -388,13 +388,13 @@ class RedisMock {
   }
 
   getLastCall(method) {
-    const calls = this._callLog.filter(call => call.method === method);
+    const calls = this._callLog.filter((call) => call.method === method);
     return calls.length > 0 ? calls[calls.length - 1] : null;
   }
 
   emit(event, ...args) {
     const listeners = this._listeners[event] || [];
-    listeners.forEach(listener => listener(...args));
+    listeners.forEach((listener) => listener(...args));
     return this;
   }
 
@@ -406,7 +406,7 @@ class RedisMock {
     return {
       data: Object.fromEntries(this._data),
       expirations: Object.fromEntries(this._expirations),
-      streams: Object.fromEntries(this._streams)
+      streams: Object.fromEntries(this._streams),
     };
   }
 }
@@ -431,30 +431,29 @@ class PipelineMock {
   }
 
   get(...args) {
-    this.commands.push({ method: 'get', args });
+    this.commands.push({ method: "get", args });
     return this;
   }
 
   set(...args) {
-    this.commands.push({ method: 'set', args });
+    this.commands.push({ method: "set", args });
     return this;
   }
 
   setex(...args) {
-    this.commands.push({ method: 'setex', args });
+    this.commands.push({ method: "setex", args });
     return this;
   }
 
   del(...args) {
-    this.commands.push({ method: 'del', args });
+    this.commands.push({ method: "del", args });
     return this;
   }
 
   expire(...args) {
-    this.commands.push({ method: 'expire', args });
+    this.commands.push({ method: "expire", args });
     return this;
   }
-
 }
 
 // ===== MULTI/TRANSACTION MOCK =====

@@ -1,5 +1,7 @@
-const exec = async (req, res) => {
-  return res
+import type { Request, Response } from "express";
+
+async function exec(_req: Request, res: Response): Promise<void> {
+  res
     .status(200)
     .json({
       status: "UP",
@@ -7,5 +9,6 @@ const exec = async (req, res) => {
       uptime: process.uptime(),
     })
     .end();
-};
+}
+
 export default { exec };

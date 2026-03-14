@@ -4,30 +4,23 @@
   "description": "jwt server",
   "author": "Alex Furmanov",
   "license": "MIT",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/alx77/jwt-up.git"
   },
   "scripts": {
-    "start": "node index.js",
-    "watch": "nodemon index.js",
-    "test": "vitest run .test.js",
-    "test:it": "INTEGRATION_TEST=true vitest run .it.js",
-    "test:i": "dev/test-runner.sh start; INTEGRATION_TEST=true vitest run .it.js; EXIT_CODE=$?; dev/test-runner.sh stop; exit $EXIT_CODE",
-    "test:coverage": "vitest run --coverage .test.js",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:dev": "tsx index.ts",
+    "watch": "tsx watch index.ts",
+    "test": "vitest run --reporter=verbose test/unit",
+    "test:it": "INTEGRATION_TEST=true vitest run test/integration",
+    "test:i": "dev/test-runner.sh start; INTEGRATION_TEST=true vitest run test/integration; EXIT_CODE=$?; dev/test-runner.sh stop; exit $EXIT_CODE",
+    "test:coverage": "vitest run --coverage",
     "startenv": "dev/test-runner.sh start",
     "stopenv": "dev/test-runner.sh stop"
-  },
-  "nodemonConfig": {
-    "ext": "*.js, *.json",
-    "ignore": [
-      "log/*",
-      "test/*",
-      "db/*"
-    ],
-    "delay": "2500"
   },
   "dependencies": {
     "argon2": "^0.44.0",
@@ -50,7 +43,6 @@
     "mime": "^4.0.7",
     "nconf": "^0.12.1",
     "nodemailer": "^7.0.10",
-    "nodemon": "^3.1.9",
     "path": "latest",
     "pg": "^8.14.1",
     "redis": "^5.8.2",
@@ -64,13 +56,20 @@
     "zod-openapi": "^5.4.5"
   },
   "devDependencies": {
-    "@tsconfig/node23": "^23.0.1",
+    "@tsconfig/node24": "^24.0.4",
+    "@types/body-parser": "^1.19.5",
+    "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/morgan": "^1.9.9",
+    "@types/nconf": "^0.10.7",
+    "@types/nodemailer": "^7.0.11",
+    "@types/swagger-ui-express": "^4.1.8",
     "@vitest/coverage-v8": "^4.0.15",
     "@vitest/ui": "^4.0.15",
     "child_process": "^1.0.2",
     "rewire": "7.0.0",
+    "tsx": "^4.19.3",
     "vitest": "^4.0.15",
     "wait-on": "^9.0.3"
   }

@@ -1,18 +1,5 @@
-import {
-  describe,
-  it,
-  expect,
-  afterAll,
-  vi,
-  beforeEach,
-  afterEach,
-} from "vitest";
-import {
-  addUser,
-  getUser,
-  removeUser,
-  getAccessToken,
-} from "@test/integration/TestHelper.js";
+import { describe, it, expect, afterAll, vi, beforeEach, afterEach } from "vitest";
+import { addUser, getUser, removeUser, getAccessToken, getRefreshToken } from "@test/integration/TestHelper.js";
 import { AccountStatus, AccountRole } from "@/services/users/index.js";
 import redis from "@/utils/RedisHelper.js";
 import { transporter } from "@/utils/EmailHelper.js";
@@ -43,27 +30,21 @@ describe("@users tests", () => {
     const redisSpy = vi.spyOn(redis, "setex");
     const transporterSpy = vi.spyOn(transporter, "sendMail");
 
-    const response = await request(app)
-      .post("/api/auth/user")
-      .send(user)
-      .expect("Content-Type", /json/)
-      .expect(200);
+    const response = await request(app).post("/api/auth/user").send(user).expect("Content-Type", /json/).expect(200);
 
     expect(response.body).toEqual({ status: "OK" });
     expect(redisSpy).toHaveBeenCalled();
 
     const calls = redisSpy.mock.calls;
     [activationCodeWithPrefix, , userUuid] = calls[0];
-    const activationCode = activationCodeWithPrefix.substring(
-      ACTIVATION_CODE_PREFIX.length
-    );
+    const activationCode = activationCodeWithPrefix.substring(ACTIVATION_CODE_PREFIX.length);
 
     expect(transporterSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         to: user.email,
         text: expect.stringContaining(encodeURIComponent(activationCode)),
       }),
-      expect.any(Function)
+      expect.any(Function),
     );
 
     const userData = await getUser(userUuid, activationCodeWithPrefix);
@@ -92,10 +73,7 @@ describe("@users tests", () => {
     expect(response.body).toHaveProperty("access_token");
     expect(response.body).toHaveProperty("refresh_token");
 
-    const userData = await getUser(
-      userUuid,
-      ACTIVATION_CODE_PREFIX + activationCode
-    );
+    const userData = await getUser(userUuid, ACTIVATION_CODE_PREFIX + activationCode);
     expect(userData.user_id).toBe(userUuid);
     expect(userData.redisUserId).toBeNull(); // No Redis key after activation
   });
@@ -160,10 +138,7 @@ describe("@users tests", () => {
     const accessToken = await getAccessToken(userUuid);
 
     // Act & Assert
-    const response = await request(app)
-      .get("/api/auth/user")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200);
+    const response = await request(app).get("/api/auth/user").set("Authorization", `Bearer ${accessToken}`).expect(200);
 
     expect(response.body.user).toMatchObject({
       email: user.email,
@@ -206,6 +181,35 @@ describe("@users tests", () => {
     expect(userData.name).toBe("Jessica");
   });
 
+  it("Logout user and reject subsequent refresh", async () => {
+    // Arrange
+    let activationCode;
+    ({ userUuid, activationCode } = await addUser({
+      ...user,
+      status: AccountStatus.ACTIVE,
+      roles: [AccountRole.REGISTERED],
+    }));
+    activationCodeWithPrefix = ACTIVATION_CODE_PREFIX + activationCode;
+
+    const accessToken = await getAccessToken(userUuid);
+    const refreshToken = await getRefreshToken(userUuid);
+
+    // Act — logout with both tokens
+    await request(app)
+      .post("/api/auth/logout")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ refresh_token: refreshToken })
+      .expect(200);
+
+    // Assert — refresh token is now blacklisted
+    const refreshResponse = await request(app)
+      .get("/api/auth/refresh")
+      .set("Authorization", `Bearer ${refreshToken}`)
+      .expect(401);
+
+    expect(refreshResponse.body).toMatchObject({ error: { message: "UNAUTHORIZED" } });
+  });
+
   afterEach(async () => {
     if (userUuid || activationCodeWithPrefix) {
       await removeUser(userUuid, activationCodeWithPrefix);
@@ -228,7 +232,6 @@ describe("@users tests", () => {
 });
 //TODO
 // - delete user
-// - logout user
 // - test for invalid activation code
 // - test for login with invalid credentials
 // - test for refresh with invalid/expired token

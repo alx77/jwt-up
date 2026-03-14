@@ -6,7 +6,6 @@
       "function": "exec",
       "method": "get",
       "route": "/health",
-      "auth": false,
       "validate": false,
       "hide": true
     }

@@ -9,7 +9,6 @@
       "description": "This method creates temporal users until they activate it by email",
       "method": "post",
       "route": "/auth/user",
-      "auth": false,
       "validate": true,
       "responses": [201, 409]
     },
@@ -17,7 +16,6 @@
       "function": "activate",
       "method": "get",
       "route": "/auth/activate/:code",
-      "auth": false,
       "validate": true,
       "responses": [200]
     },
@@ -25,7 +23,6 @@
       "function": "login",
       "method": "post",
       "route": "/auth/login",
-      "preprocess": false,
       "validate": true,
       "responses": [200]
     },
@@ -33,7 +30,7 @@
       "function": "refreshToken",
       "method": "get",
       "route": "/auth/refresh",
-      "auth": true,
+      "auth": { "type": "refresh" },
       "responses": [200, 401, 403]
     },
     {
@@ -41,7 +38,7 @@
       "summary": "Get own user",
       "method": "get",
       "route": "/auth/user",
-      "auth": ["registered", "admin", "manager", "operator"],
+      "auth": { "type": "access", "roles": ["registered", "admin", "manager", "operator"] },
       "validate": true,
       "responses": [200, 401, 403]
     },
@@ -50,7 +47,7 @@
       "summary": "Get user by id",
       "method": "get",
       "route": "/auth/user/:user_id",
-      "auth": ["admin", "manager", "operator"],
+      "auth": { "type": "access", "roles": ["admin", "manager", "operator"] },
       "validate": true,
       "responses": [200, 401, 403]
     },
@@ -58,7 +55,7 @@
       "function": "update",
       "method": "put",
       "route": "/auth/user",
-      "auth": ["registered", "admin", "manager", "operator"],
+      "auth": { "type": "access", "roles": ["registered", "admin", "manager", "operator"] },
       "validate": true,
       "responses": [200, 401, 403]
     },
@@ -66,15 +63,16 @@
       "function": "del",
       "method": "delete",
       "route": "/auth/user/:user_id",
-      "auth": ["registered", "admin", "manager", "operator"],
+      "auth": { "type": "access", "roles": ["registered", "admin", "manager", "operator"] },
       "validate": true,
       "responses": [200, 401, 403]
     },
     {
       "function": "logout",
-      "method": "get",
+      "method": "post",
       "route": "/auth/logout",
-      "auth": true,
+      "auth": { "type": "access" },
+      "validate": true,
       "responses": [200, 401, 403]
     }
   ]

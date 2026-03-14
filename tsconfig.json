@@ -1,11 +1,12 @@
 {
-    "extends": "@tsconfig/node23/tsconfig.json",
-    "include": ["src/**/*.ts", "test/**/*.test.ts"],
-    "exclude": ["node_modules"],
-    "compilerOptions":
-    {
-//        "allowJs": false,
-//        "checkJs": true,
-        "outDir": "dist"
-    }
+  "extends": "@tsconfig/node24/tsconfig.json",
+  "include": ["src/**/*.ts", "index.ts"],
+  "exclude": ["node_modules", "dist", "src/**/__mocks__/**"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "resolveJsonModule": true
+  }
 }
