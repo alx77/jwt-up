@@ -441,24 +441,33 @@ describe("@users tests", () => {
   });
 
   describe("logout method tests", () => {
-    const token = "test_token";
-    const ttl = 3600;
+    const accessToken = "test_access_token";
+    const refreshToken = "test_refresh_token";
+    const accessTtl = 3600;
+    const refreshTtl = 86400;
 
-    it("should blacklist token in redis", async () => {
-      await userService.logout(token, ttl);
+    it("should blacklist both tokens in redis", async () => {
+      await userService.logout(accessToken, accessTtl, refreshToken, refreshTtl);
 
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        `blacklist_${token}`,
-        ttl,
-        1
-      );
+      expect(mockRedis.setex).toHaveBeenCalledWith(`blacklist_${accessToken}`, accessTtl, 1);
+      expect(mockRedis.setex).toHaveBeenCalledWith(`blacklist_${refreshToken}`, refreshTtl, 1);
+      expect(mockRedis.setex).toHaveBeenCalledTimes(2);
     });
 
-    it("should not blacklist token when ttl is 0 or negative", async () => {
-      await userService.logout(token, 0);
-      expect(mockRedis.setex).not.toHaveBeenCalled();
+    it("should skip access token blacklist when accessTtl is 0 or negative", async () => {
+      await userService.logout(accessToken, 0, refreshToken, refreshTtl);
+      expect(mockRedis.setex).toHaveBeenCalledTimes(1);
+      expect(mockRedis.setex).toHaveBeenCalledWith(`blacklist_${refreshToken}`, refreshTtl, 1);
+    });
 
-      await userService.logout(token, -100);
+    it("should skip refresh token blacklist when refreshTtl is 0 or negative", async () => {
+      await userService.logout(accessToken, accessTtl, refreshToken, 0);
+      expect(mockRedis.setex).toHaveBeenCalledTimes(1);
+      expect(mockRedis.setex).toHaveBeenCalledWith(`blacklist_${accessToken}`, accessTtl, 1);
+    });
+
+    it("should not blacklist any token when both ttls are 0 or negative", async () => {
+      await userService.logout(accessToken, 0, refreshToken, -100);
       expect(mockRedis.setex).not.toHaveBeenCalled();
     });
 
@@ -466,7 +475,7 @@ describe("@users tests", () => {
       const redisError = new Error("Redis connection failed");
       mockRedis.setex.mockRejectedValue(redisError);
 
-      await expect(userService.logout(token, ttl)).rejects.toThrow(
+      await expect(userService.logout(accessToken, accessTtl, refreshToken, refreshTtl)).rejects.toThrow(
         "Redis connection failed"
       );
     });
