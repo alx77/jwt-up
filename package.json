@@ -11,7 +11,7 @@
     "url": "https://github.com/alx77/jwt-up.git"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && find src -name 'function.json' | while read f; do dest=\"dist/${f}\"; mkdir -p \"$(dirname $dest)\"; cp \"$f\" \"$dest\"; done",
     "start": "node dist/index.js",
     "start:dev": "tsx index.ts",
     "watch": "tsx watch index.ts",
