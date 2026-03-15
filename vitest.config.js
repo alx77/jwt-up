@@ -14,6 +14,7 @@ export default defineConfig({
 
     testTimeout: process.env.INTEGRATION_TEST ? 60000 : 10000,
     hookTimeout: process.env.INTEGRATION_TEST ? 60000 : 10000,
+    fileParallelism: !process.env.INTEGRATION_TEST,
 
     alias: {
       "@": new URL("./src", import.meta.url).pathname,

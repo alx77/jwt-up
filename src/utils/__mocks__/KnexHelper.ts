@@ -12,6 +12,12 @@ Object.assign(pgFn, {
   into: vi.fn().mockReturnThis(),
   returning: vi.fn().mockReturnThis(),
   join: vi.fn().mockReturnThis(),
+  count: vi.fn().mockReturnThis(),
+  orderBy: vi.fn().mockReturnThis(),
+  limit: vi.fn().mockReturnThis(),
+  offset: vi.fn().mockReturnThis(),
+  whereLike: vi.fn().mockReturnThis(),
+  orWhereLike: vi.fn().mockReturnThis(),
 
   ref: vi.fn((col) => `"${col}"`),
 
