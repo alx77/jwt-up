@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+CAUTION: Do not modify this file unless you know what you are doing.
+ Unexpected results may occur if the code is changed deliberately.
+-->
+<dbmodel pgmodeler-ver="1.1.3" use-changelog="false" author="Alex Furmanov" max-obj-count="10"
+	 last-position="0,0" last-zoom="1" scene-rect="0,0,1400,900"
+	 default-schema="public" default-owner="postgres"
+	 layers="Default layer"
+	 active-layers="0"
+	 layer-name-colors="#000000"
+	 layer-rect-colors="#b4b4b4"
+	 show-layer-names="false" show-layer-rects="false">
+
+<database name="auth" encoding="UTF8" lc-collate="en_US.utf8" lc-ctype="en_US.utf8" is-template="false" allow-conns="true" sql-disabled="true">
+	<role name="postgres"/>
+	<tablespace name="pg_default"/>
+</database>
+
+<schema name="public" layers="0" rect-visible="true" fill-color="#e1e1e1" name-color="#000000" sql-disabled="true">
+</schema>
+
+<!-- ══════════════════════════════════════════════
+     SEQUENCES
+     ══════════════════════════════════════════════ -->
+
+<sequence name="account_id_seq" cycle="false" start="10" increment="1" min-value="1" max-value="9223372036854775807" cache="1">
+	<schema name="public"/>
+	<role name="postgres"/>
+</sequence>
+
+<sequence name="role_id_seq" cycle="false" start="10" increment="1" min-value="1" max-value="2147483647" cache="1">
+	<schema name="public"/>
+	<role name="postgres"/>
+</sequence>
+
+<sequence name="permission_id_seq" cycle="false" start="1" increment="1" min-value="1" max-value="9223372036854775807" cache="1">
+	<schema name="public"/>
+	<role name="postgres"/>
+</sequence>
+
+<!-- ══════════════════════════════════════════════
+     ACCOUNT
+     System user.
+     status: 1=ACTIVE, 2=BLOCKED, 3=TEMPORARY_BLOCKED
+     uid — external identifier exposed as 22-char Base64url in the API
+     passwd — Argon2id hash
+     ══════════════════════════════════════════════ -->
+
+<table name="account" layers="0" collapse-mode="2" max-obj-count="8" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="100" y="300"/>
+
+	<column name="id" not-null="true" sequence="public.account_id_seq">
+		<type name="bigint" length="0"/>
+	</column>
+	<column name="uid" not-null="true" default-value="gen_random_uuid()">
+		<type name="uuid" length="0"/>
+		<comment><![CDATA[External identifier. Exposed as 22-char Base64url via UuidBase64.ts]]></comment>
+	</column>
+	<column name="login" not-null="true">
+		<type name="character varying" length="255"/>
+	</column>
+	<column name="passwd" not-null="true">
+		<type name="character varying" length="255"/>
+		<comment><![CDATA[Argon2id hash]]></comment>
+	</column>
+	<column name="email" default-value="NULL">
+		<type name="character varying" length="255"/>
+	</column>
+	<column name="name" default-value="NULL">
+		<type name="character varying" length="255"/>
+	</column>
+	<column name="start_date" default-value="now()">
+		<type name="timestamptz" length="0"/>
+	</column>
+	<column name="status" not-null="true" default-value="2">
+		<type name="smallint" length="0"/>
+		<comment><![CDATA[1=ACTIVE, 2=BLOCKED, 3=TEMPORARY_BLOCKED]]></comment>
+	</column>
+
+	<constraint name="account_pkey" type="pk-constr" table="public.account">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="account_uid_uq" type="uq-constr" table="public.account">
+		<columns names="uid" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="account_login_uq" type="uq-constr" table="public.account">
+		<columns names="login" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="account_email_uq" type="uq-constr" table="public.account">
+		<columns names="email" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<!-- ══════════════════════════════════════════════
+     ROLE
+     Named role. Machine-readable names: admin, manager, operator, registered, guest.
+     ══════════════════════════════════════════════ -->
+
+<table name="role" layers="0" collapse-mode="2" max-obj-count="2" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="540" y="140"/>
+
+	<column name="id" not-null="true" sequence="public.role_id_seq">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="character varying" length="100"/>
+		<comment><![CDATA[Machine-readable name: admin, manager, operator, registered, guest]]></comment>
+	</column>
+
+	<constraint name="role_pkey" type="pk-constr" table="public.role">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="role_name_uq" type="uq-constr" table="public.role">
+		<columns names="name" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<!-- ══════════════════════════════════════════════
+     ACCOUNT_ROLES
+     M:N mapping of accounts to roles.
+     ══════════════════════════════════════════════ -->
+
+<table name="account_roles" layers="0" collapse-mode="2" max-obj-count="2" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="540" y="300"/>
+
+	<column name="account_id" not-null="true">
+		<type name="bigint" length="0"/>
+	</column>
+	<column name="role_id" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+
+	<constraint name="account_roles_pkey" type="pk-constr" table="public.account_roles">
+		<columns names="account_id,role_id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="fk_ar_account" type="fk-constr" comparison-type="MATCH SIMPLE"
+		upd-action="CASCADE" del-action="CASCADE"
+		ref-table="public.account">
+		<columns names="account_id" ref-type="src-columns"/>
+		<columns names="id" ref-type="dst-columns"/>
+	</constraint>
+	<constraint name="fk_ar_role" type="fk-constr" comparison-type="MATCH SIMPLE"
+		upd-action="CASCADE" del-action="CASCADE"
+		ref-table="public.role">
+		<columns names="role_id" ref-type="src-columns"/>
+		<columns names="id" ref-type="dst-columns"/>
+	</constraint>
+</table>
+
+<!-- ══════════════════════════════════════════════
+     PERMISSIONS
+     Role permissions on resources. RBAC → ABAC without schema migration:
+
+     RBAC  (resource_id IS NULL, conditions IS NULL):
+       role=admin, action=delete, resource_type=product
+       → admin can delete all products
+
+     ABAC level 1 (resource_id IS NOT NULL):
+       role=editor, action=update, resource_type=product, resource_id=42
+       → editor can update only product #42
+
+     ABAC level 2 (conditions IS NOT NULL):
+       role=manager, action=read, resource_type=order,
+       conditions={"status": ["new","processing"]}
+       → manager sees only orders in specific statuses
+       Conditions are interpreted by the application (or OPA).
+
+     resource_type='*' grants access to all resource types.
+     ══════════════════════════════════════════════ -->
+
+<table name="permissions" layers="0" collapse-mode="2" max-obj-count="6" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="960" y="220"/>
+
+	<column name="id" not-null="true" sequence="public.permission_id_seq">
+		<type name="bigint" length="0"/>
+	</column>
+	<column name="role_id" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="action" not-null="true">
+		<type name="character varying" length="50"/>
+		<comment><![CDATA[read | create | update | delete]]></comment>
+	</column>
+	<column name="resource_type" not-null="true">
+		<type name="character varying" length="100"/>
+		<comment><![CDATA[product | order | account | * (wildcard)]]></comment>
+	</column>
+	<column name="resource_id" default-value="NULL">
+		<type name="bigint" length="0"/>
+		<comment><![CDATA[NULL = permission applies to all objects of the type (RBAC). NOT NULL = permission applies to a specific object (ABAC lvl 1)]]></comment>
+	</column>
+	<column name="conditions" default-value="NULL">
+		<type name="jsonb" length="0"/>
+		<comment><![CDATA[Arbitrary ABAC lvl 2 conditions interpreted by the application. Example: {"category_id": 5}]]></comment>
+	</column>
+
+	<constraint name="permissions_pkey" type="pk-constr" table="public.permissions">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="permissions_uq" type="uq-constr" table="public.permissions">
+		<columns names="role_id,action,resource_type,resource_id" ref-type="src-columns"/>
+		<comment><![CDATA[NULL resource_id is included in uniqueness. In PostgreSQL NULL != NULL, so multiple rows with NULL resource_id do not conflict — this is intentional.]]></comment>
+	</constraint>
+	<constraint name="fk_permissions_role" type="fk-constr" comparison-type="MATCH SIMPLE"
+		upd-action="CASCADE" del-action="CASCADE"
+		ref-table="public.role">
+		<columns names="role_id" ref-type="src-columns"/>
+		<columns names="id" ref-type="dst-columns"/>
+	</constraint>
+</table>
+
+
+</dbmodel>

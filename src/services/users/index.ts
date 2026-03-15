@@ -67,7 +67,7 @@ class UserService {
                 role_id: AccountRole.REGISTERED,
               })
               .from("new_user"),
-          ).into(pg.raw("acl (account_id, role_id)"));
+          ).into(pg.raw("account_roles (account_id, role_id)"));
         })
         .select("uid")
         .from("new_user");
@@ -124,7 +124,7 @@ class UserService {
       return { user_id };
     } catch (err: unknown) {
       const pg_err = err as { code?: string; constraint?: string };
-      if (pg_err.code === "23505" && pg_err.constraint === "login_idx") {
+      if (pg_err.code === "23505" && pg_err.constraint === "account_login_uq") {
         throw new StatusError(409, "USER_ALREADY_EXISTS");
       }
       throw err;
@@ -153,8 +153,8 @@ class UserService {
         pg.raw("? as roles", [
           pg("role")
             .select(pg.raw("json_agg(role.name)"))
-            .join("acl", "acl.role_id", "role.id")
-            .where("acl.account_id", pg.ref("update_user.id")),
+            .join("account_roles", "account_roles.role_id", "role.id")
+            .where("account_roles.account_id", pg.ref("update_user.id")),
         ]),
       )
       .from("update_user")
@@ -185,8 +185,8 @@ class UserService {
         pg.raw("? as roles", [
           pg("role")
             .select(pg.raw("json_agg(role.name)"))
-            .join("acl", "acl.role_id", "role.id")
-            .where("acl.account_id", pg.raw("account.id")),
+            .join("account_roles", "account_roles.role_id", "role.id")
+            .where("account_roles.account_id", pg.raw("account.id")),
         ]),
       ])
       .where({ email, status: AccountStatus.ACTIVE });
@@ -226,8 +226,8 @@ class UserService {
         pg.raw("? as roles", [
           pg("role")
             .select(pg.raw("json_agg(role.name)"))
-            .join("acl", "acl.role_id", "role.id")
-            .where("acl.account_id", pg.raw("account.id")),
+            .join("account_roles", "account_roles.role_id", "role.id")
+            .where("account_roles.account_id", pg.raw("account.id")),
         ]),
       ])
       .where({ uid, status: AccountStatus.ACTIVE });

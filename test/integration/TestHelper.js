@@ -25,7 +25,7 @@ export async function addUser(user) {
   const account_id = userData?.rows[0]?.id;
   if (user.roles && user.roles.length > 0 && account_id) {
     for (const role of user.roles) {
-      await pg.raw("insert into acl (account_id, role_id) values (?, ?)", [
+      await pg.raw("insert into account_roles (account_id, role_id) values (?, ?)", [
         account_id,
         role,
       ]);
@@ -46,7 +46,7 @@ export async function removeUser(userUuid, activationCodeWithPrefix) {
     [userUuid]
   );
   const id = userData?.rows[0]?.id;
-  await pg.raw("delete from acl where account_id = ?", [id]);
+  await pg.raw("delete from account_roles where account_id = ?", [id]);
 
   if (activationCodeWithPrefix) {
     await redis.del(activationCodeWithPrefix);
@@ -66,7 +66,7 @@ export async function getUser(userUuid, activationCodeWithPrefix) {
 }
 export async function getAccessToken(userUuid) {
   const userData = await pg.raw(
-    "select email, json_agg(role.name) as roles from account join acl on account.id = acl.account_id join role on acl.role_id = role.id where uid = ? group by email",
+    "select email, json_agg(role.name) as roles from account join account_roles on account.id = account_roles.account_id join role on account_roles.role_id = role.id where uid = ? group by email",
     [userUuid]
   );
 

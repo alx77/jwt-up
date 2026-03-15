@@ -34,7 +34,7 @@
   "NODE_ENV": "development",
   "REDIS_HOST": "localhost",
   "REDIS_PORT": 26379,
-  "POSTGRES_CONN": "postgres://postgres:secret@localhost:25432/portal",
+  "POSTGRES_CONN": "postgres://postgres:secret@localhost:35432/auth",
   "POSTGRES_POOL_MAX": 10,
   "KAFKA_HOST": "localhost:9092",
   "KAFKA_SASL_USERNAME": "admin",
