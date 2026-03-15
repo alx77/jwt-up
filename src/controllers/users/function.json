@@ -5,8 +5,8 @@
   "bindings": [
     {
       "function": "register",
-      "summary": "Register new user",
-      "description": "This method creates temporal users until they activate it by email",
+      "summary": "Register a new account",
+      "description": "Creates a BLOCKED account and sends an activation link to the provided email. The account becomes ACTIVE only after the user visits /auth/activate/{code}.",
       "method": "post",
       "route": "/auth/user",
       "validate": true,
@@ -14,6 +14,8 @@
     },
     {
       "function": "activate",
+      "summary": "Activate account via email link",
+      "description": "Activates a BLOCKED account and issues the first token pair.",
       "method": "get",
       "route": "/auth/activate/:code",
       "validate": true,
@@ -21,6 +23,8 @@
     },
     {
       "function": "login",
+      "summary": "Login",
+      "description": "Authenticates with email + password and returns a token pair.",
       "method": "post",
       "route": "/auth/login",
       "validate": true,
@@ -28,6 +32,8 @@
     },
     {
       "function": "refreshToken",
+      "summary": "Refresh access token",
+      "description": "Pass the refresh token (not the access token) in the Authorization header. Returns a new token pair. The used refresh token is blacklisted in Redis.",
       "method": "get",
       "route": "/auth/refresh",
       "auth": { "type": "refresh" },
@@ -35,7 +41,7 @@
     },
     {
       "function": "read",
-      "summary": "Get own user",
+      "summary": "Get current user profile",
       "method": "get",
       "route": "/auth/user",
       "auth": { "type": "access", "roles": ["registered", "admin", "manager", "operator"] },
@@ -44,7 +50,8 @@
     },
     {
       "function": "read",
-      "summary": "Get user by id",
+      "summary": "Get user by ID",
+      "description": "Requires admin, manager, or operator role.",
       "method": "get",
       "route": "/auth/user/:user_id",
       "auth": { "type": "access", "roles": ["admin", "manager", "operator"] },
@@ -53,6 +60,8 @@
     },
     {
       "function": "update",
+      "summary": "Update user profile",
+      "description": "A regular user can only update their own profile (user_id must match token subject). An admin can update any account.",
       "method": "put",
       "route": "/auth/user",
       "auth": { "type": "access", "roles": ["registered", "admin", "manager", "operator"] },
@@ -61,6 +70,8 @@
     },
     {
       "function": "del",
+      "summary": "Delete user account",
+      "description": "A user can delete their own account. Admin can delete any account.",
       "method": "delete",
       "route": "/auth/user/:user_id",
       "auth": { "type": "access", "roles": ["registered", "admin", "manager", "operator"] },
@@ -69,6 +80,8 @@
     },
     {
       "function": "logout",
+      "summary": "Logout",
+      "description": "Blacklists both the access token (from Authorization header) and the refresh token (from request body) in Redis with their remaining TTL.",
       "method": "post",
       "route": "/auth/logout",
       "auth": { "type": "access" },

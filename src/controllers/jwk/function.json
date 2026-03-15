@@ -5,6 +5,8 @@
   "bindings": [
     {
       "function": "jwk",
+      "summary": "JSON Web Key Set (public keys)",
+      "description": "Returns the public EC keys used to sign JWTs. Consumed by portal and other services for token verification.",
       "method": "get",
       "route": "/jwk",
       "responses": [200]
