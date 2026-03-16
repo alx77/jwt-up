@@ -15,7 +15,7 @@ if [[ $1 == 'start' ]]; then
     done
     #sleep 7 #for kafka elections
 else
-    docker compose -f docker-compose.postgres.yml -f docker-compose.redis.yml -f docker-compose.mailpit.yml down --remove-orphans
+    docker compose -f docker-compose.postgres.yml -f docker-compose.redis.yml -f docker-compose.mailpit.yml down --remove-orphans --volumes
 # -f docker-compose.kafka.yml down
 fi
 cd $PWD

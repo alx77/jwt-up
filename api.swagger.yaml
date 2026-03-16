@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: jwt-up — Auth & User Management API
+  version: 1.0.0
+  description: |
+    Authentication and user management service.
+
+    ## Authentication
+    All protected endpoints require a JWT access token in the `Authorization` header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+    The `/auth/refresh` endpoint requires a **refresh token** instead of an access token.
+
+    ## Token lifecycle
+    1. **Register** → `POST /auth/user` → BLOCKED account + activation email
+    2. **Activate** → `GET /auth/activate/{code}` → account ACTIVE + first token pair
+    3. **Login** → `POST /auth/login` → access token (600s) + refresh token (10800s)
+    4. **Refresh** → `GET /auth/refresh` (with refresh token) → new token pair
+    5. **Logout** → `POST /auth/logout` → both tokens blacklisted in Redis
+
+    ## Password policy
+    Minimum 8 characters. Must contain uppercase, lowercase, digit, and one of: `!@#$%^&*_:;<>`
+
+servers:
+  - url: http://localhost:8088/api
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT signed with ES256 (ECDSA). Access token for regular endpoints;
+        refresh token (aud=refresh) for GET /auth/refresh.
+
+  schemas:
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: Invalid or expired token
+
+    TokenPair:
+      type: object
+      required: [status, access_token, refresh_token]
+      properties:
+        status:
+          type: string
+          enum: [OK]
+          example: OK
+        user_id:
+          type: string
+          description: 22-char Base64url UUID of the authenticated user
+          example: V4UjkL9mQpTzRxWnYsO1eA
+        access_token:
+          type: string
+          description: JWT access token (ES256, ~600s TTL)
+        refresh_token:
+          type: string
+          description: JWT refresh token (ES256, aud=refresh, ~10800s TTL)
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Account email address
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          description: Account password
+
+    RegisterRequest:
+      type: object
+      required: [login, email, password]
+      properties:
+        login:
+          type: string
+          description: Username — alphanumeric only, max 30 chars
+          pattern: '^[a-zA-Z0-9]+$'
+          maxLength: 30
+          example: johndoe
+        email:
+          type: string
+          format: email
+          description: Email address — used for login and activation link
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          description: >
+            Min 8 characters. Must contain at least one uppercase letter,
+            one lowercase letter, one digit, and one special character (!@#$%^&*_:;<>).
+          pattern: '^(?=(?:.*[A-Z]))(?=(?:.*[a-z]))(?=(?:.*[0-9]))(?=(?:.*[!@#$%^&*_:;<>])).{8,}$'
+          example: Secret1!
+        name:
+          type: string
+          description: Display name (nickname)
+          pattern: '^\w+(?:\s+\w+)*$'
+          maxLength: 30
+          example: John Doe
+        captcha_token:
+          type: string
+          description: reCAPTCHA token (required in production)
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 22-char Base64url UUID (external identifier)
+          example: V4UjkL9mQpTzRxWnYsO1eA
+        login:
+          type: string
+          description: Username (alphanumeric)
+          example: johndoe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        name:
+          type: string
+          description: Display name
+          example: John Doe
+        status:
+          type: integer
+          description: 1=ACTIVE, 2=BLOCKED, 3=TEMPORARY_BLOCKED
+          enum: [1, 2, 3]
+        created_at:
+          type: string
+          format: date-time
+
+    AccountUpdate:
+      type: object
+      required: [user_id, login, email]
+      properties:
+        user_id:
+          type: string
+          description: 22-char Base64url UUID of the account to update
+          example: V4UjkL9mQpTzRxWnYsO1eA
+        login:
+          type: string
+          pattern: '^[a-zA-Z0-9]+$'
+          maxLength: 30
+          example: johndoe2
+        email:
+          type: string
+          format: email
+          example: john2@example.com
+        name:
+          type: string
+          maxLength: 30
+          example: John Doe
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+# ══════════════════════════════════════════════
+# PATHS
+# ══════════════════════════════════════════════
+paths:
+
+  # ── REGISTRATION & PROFILE ────────────────────
+
+  /auth/user:
+    post:
+      tags: [Auth]
+      summary: Register a new account
+      description: |
+        Creates a BLOCKED account and sends an activation link to the provided email.
+        The account becomes ACTIVE only after the user visits `/auth/activate/{code}`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              login: johndoe
+              email: john@example.com
+              password: Secret1!
+              name: John Doe
+      responses:
+        '201':
+          description: Account created, activation email sent
+        '400':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '409':
+          description: Login or email already taken
+
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  user:
+                    $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Users]
+      summary: Update user profile
+      description: |
+        A regular user can only update their own profile (`user_id` must match token subject).
+        An admin can update any account.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountUpdate'
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  user:
+                    $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /auth/user/{user_id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      description: Requires admin, manager, or operator role.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: 22-char Base64url UUID
+            example: V4UjkL9mQpTzRxWnYsO1eA
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  user:
+                    $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Users]
+      summary: Delete user account
+      description: A user can delete their own account. Admin can delete any account.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: V4UjkL9mQpTzRxWnYsO1eA
+      responses:
+        '200':
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ── AUTH FLOW ─────────────────────────────────
+
+  /auth/activate/{code}:
+    get:
+      tags: [Auth]
+      summary: Activate account via email link
+      description: Activates a BLOCKED account and issues the first token pair.
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Activation code from the email (Redis TTL 24h)
+      responses:
+        '200':
+          description: Account activated — token pair issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: Authenticates with email + password and returns a token pair.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: john@example.com
+              password: Secret1!
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    get:
+      tags: [Auth]
+      summary: Refresh access token
+      description: |
+        Pass the **refresh token** (not the access token) in the `Authorization` header.
+        Returns a new token pair. The used refresh token is blacklisted in Redis.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      description: |
+        Blacklists both the access token (from `Authorization` header) and the
+        refresh token (from request body) in Redis with their remaining TTL.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Service health check
+      responses:
+        '200':
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+                    description: Uptime in seconds
+
+  /jwk:
+    get:
+      tags: [JWK]
+      summary: JSON Web Key Set (public keys)
+      description: |
+        Returns the public EC keys used to sign JWTs.
+        Consumed by portal and other services for token verification.
+      responses:
+        '200':
+          description: JWKS document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+
+  # ── ADMIN ─────────────────────────────────────
+
+  /admin/accounts:
+    get:
+      tags: [Admin]
+      summary: List all accounts
+      description: Requires admin role.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [1, 2, 3]
+          description: Filter by status (1=ACTIVE, 2=BLOCKED, 3=TEMPORARY_BLOCKED)
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search by login or email
+      responses:
+        '200':
+          description: Paginated account list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  per_page:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/accounts/{id}:
+    get:
+      tags: [Admin]
+      summary: Get account details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  user:
+                    $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Admin]
+      summary: Update account status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: integer
+                  enum: [1, 2, 3]
+                  description: 1=ACTIVE, 2=BLOCKED, 3=TEMPORARY_BLOCKED
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  user:
+                    $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      tags: [Admin]
+      summary: Soft-delete account
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Account soft-deleted (removed_at set)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'

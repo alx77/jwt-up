@@ -4,6 +4,7 @@
   "bindings": [
     {
       "function": "exec",
+      "summary": "Service health check",
       "method": "get",
       "route": "/health",
       "validate": false,

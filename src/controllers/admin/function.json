@@ -1,0 +1,47 @@
+{
+  "enabled": true,
+  "type": "http",
+  "description": "Admin endpoints for account management",
+  "bindings": [
+    {
+      "function": "list",
+      "summary": "List all accounts",
+      "description": "Returns a paginated list of accounts with optional status and search filters. Requires admin role.",
+      "method": "get",
+      "route": "/admin/accounts",
+      "auth": { "type": "access", "roles": ["admin"] },
+      "validate": true,
+      "responses": [200, 401, 403]
+    },
+    {
+      "function": "get",
+      "summary": "Get account by ID",
+      "description": "Returns a single account by its base64-encoded UUID. Requires admin role.",
+      "method": "get",
+      "route": "/admin/accounts/:id",
+      "auth": { "type": "access", "roles": ["admin"] },
+      "validate": true,
+      "responses": [200, 401, 403, 404]
+    },
+    {
+      "function": "updateStatus",
+      "summary": "Update account status",
+      "description": "Updates the status of an account (1=ACTIVE, 2=BLOCKED, 3=TEMPORARY_BLOCKED). Requires admin role.",
+      "method": "patch",
+      "route": "/admin/accounts/:id",
+      "auth": { "type": "access", "roles": ["admin"] },
+      "validate": true,
+      "responses": [200, 401, 403, 404]
+    },
+    {
+      "function": "del",
+      "summary": "Delete account",
+      "description": "Permanently deletes an account. Requires admin role.",
+      "method": "delete",
+      "route": "/admin/accounts/:id",
+      "auth": { "type": "access", "roles": ["admin"] },
+      "validate": true,
+      "responses": [200, 401, 403, 404]
+    }
+  ]
+}
