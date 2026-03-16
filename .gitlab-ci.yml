@@ -5,6 +5,12 @@ variables:
   NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
   DOCKER_IMAGE_CACHE_KEY: ${CI_COMMIT_REF_SLUG}-docker
 
+# Run on: merge request events (MR pipeline) OR pushes to the default branch
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 cache:
   - key: ${CI_COMMIT_REF_SLUG}
     paths:
@@ -38,27 +44,15 @@ install-dependencies:
       - node_modules/
       - .npm/
     policy: push
-  only:
-    changes:
-      - package.json
-      - package-lock.json
 
 test-unit:
   stage: test
   image: node:25-alpine
-  dependencies:
+  needs:
     - install-dependencies
   script:
     - apk update && apk add --no-cache openssl
     - ./dev/genES256.sh
-    - npm config set cache $NPM_CONFIG_CACHE
-    - ls -la node_modules/ || echo "Node modules not found, installing..."
-    - |
-      if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
-        echo "Installing dependencies..."
-        npm ci --cache .npm --prefer-offline
-      fi
-
     - npm run test
   cache:
     key: ${CI_COMMIT_REF_SLUG}
@@ -72,7 +66,7 @@ test-integration:
   image: node:25-alpine
   services:
     - docker:27-dind
-  dependencies:
+  needs:
     - install-dependencies
   variables:
     DOCKER_HOST: tcp://docker:2375
@@ -87,18 +81,8 @@ test-integration:
   script:
     - apk add --no-cache docker-compose openssl bash
     - ./dev/genES256.sh
-    - docker --version
-    - docker-compose --version
-    - npm config set cache $NPM_CONFIG_CACHE
-    - |
-      if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
-        echo "Installing dependencies..."
-        npm ci --cache .npm --prefer-offline
-      fi
-
     - npm run startenv
     - docker compose -f dev/docker-compose.yml run --rm app npm run test:it
-
   after_script:
     - npm run stopenv
     - |
